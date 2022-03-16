@@ -1,0 +1,132 @@
+---
+- name: Build updater
+  hosts: localhost
+  tasks:
+    - name: Build
+      ansible.builtin.command:
+        argv:
+          - cargo
+          - build
+          - "--release"
+        chdir: updater
+        creates: updater/target/release/updater
+
+- name: Set DNS servers
+  hosts: darksair.org
+  become: yes
+  tasks:
+    - name: Make sure BIND is installed
+      community.general.pacman:
+        name: bind
+        state: present
+
+    - name: Copy configuration file
+      register: bind_conf
+      ansible.builtin.copy:
+        src: named.conf
+        dest: /etc/named.conf
+        owner: root
+        group: named
+        mode: 0640
+
+    - name: Copy zone file
+      register: bind_zone
+      ansible.builtin.copy:
+        src: xeno.darksair.org.zone
+        dest: /var/named/xeno.darksair.org.zone
+        owner: root
+        group: named
+        mode: 0660
+
+    - name: Copy updater
+      ansible.builtin.copy:
+        src: updater/target/release/updater
+        dest: /usr/local/bin/ddns-updater
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Copy updater service file
+      ansible.builtin.copy:
+        src: ddns-update.service
+        dest: /etc/systemd/system/ddns-update.service
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Reload systemd daemons
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: Make sure BIND is running
+      ansible.builtin.systemd:
+        state: started
+        name: named
+        enabled: yes
+
+    - name: Restart BIND if BIND conf changed
+      when: bind_conf.changed and not bind_zone.changed
+      ansible.builtin.systemd:
+        state: restarted
+        name: named
+
+    - name: Stop BIND if zone file changed
+      when: bind_zone.changed
+      ansible.builtin.systemd:
+        state: stopped
+        name: named
+
+    - name: Remove journal if zone file changed
+      when: bind_zone.changed
+      ansible.builtin.file:
+        path: /var/named/xeno.darksair.org.zone.jnl
+        state: absent
+
+    - name: Start BIND if zone file changed
+      when: bind_zone.changed
+      ansible.builtin.systemd:
+        state: started
+        name: named
+
+    - name: Make sure updater is running
+      ansible.builtin.systemd:
+        state: restarted
+        name: ddns-update
+        enabled: yes
+
+- name: Set Let’s Encrypt cert
+  hosts: brighid.xeno
+  become: yes
+  vars_prompt:
+    - name: dns_http_password
+      prompt: DNS update HTTP password
+
+  tasks:
+    - name: Make sure certbot is installed
+      community.general.pacman:
+        name: certbot
+        state: present
+
+    - name: Copy updater script
+      ansible.builtin.template:
+        src: letsencrypt-dns01-update.sh
+        dest: /usr/local/bin/letsencrypt-dns01-update.sh
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Copy certbot timer
+      ansible.builtin.copy:
+        src: certbot.timer
+        dest: /etc/systemd/system/certbot.timer
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Copy certbot service file
+      ansible.builtin.copy:
+        src: certbot.service
+        dest: /etc/systemd/system/certbot.service
+        owner: root
+        group: root
+        mode: 0644
