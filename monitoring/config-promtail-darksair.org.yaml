@@ -1,0 +1,41 @@
+server:
+  http_listen_port: 9080
+  http_listen_address: localhost
+  grpc_listen_port: 0
+  grpc_listen_address: localhost
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: https://xeno.darksair.org:9007/loki/api/v1/push
+
+scrape_configs:
+- job_name: system
+  static_configs:
+  - targets:
+      - localhost
+    labels:
+      job: varlogs
+      __path__: /var/log/*log
+      host: darksair.org
+
+- job_name: nginx
+  static_configs:
+  - targets:
+      - localhost
+    labels:
+      job: nginx
+      __path__: /var/log/nginx/*log
+      host: darksair.org
+
+- job_name: systemd
+  journal:
+    json: false
+    max_age: 12h
+    labels:
+      job: systemd
+      host: darksair.org
+  relabel_configs:
+    - source_labels: ['__journal__systemd_unit']
+      target_label: 'unit'

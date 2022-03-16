@@ -1,0 +1,69 @@
+---
+- name: Build updater
+  hosts: localhost
+  tasks:
+    - name: Build
+      ansible.builtin.command:
+        argv:
+          - cargo
+          - build
+          - "--release"
+        chdir: updater
+        creates: updater/target/release/updater
+
+- name: Set DNS servers
+  hosts: darksair.org
+  become: yes
+  tasks:
+    - name: Make sure BIND is installed
+      community.general.pacman:
+        name: bind
+        state: present
+
+    - name: Copy configuration file
+      ansible.builtin.copy:
+        src: named.conf
+        dest: /etc/named.conf
+        owner: root
+        group: named
+        mode: 0640
+
+    - name: Copy zone file
+      ansible.builtin.copy:
+        src: xeno.darksair.org.zone
+        dest: /var/named/xeno.darksair.org.zone
+        owner: root
+        group: named
+        mode: 0660
+
+    - name: Copy updater
+      ansible.builtin.copy:
+        src: updater/target/release/updater
+        dest: /usr/local/bin/ddns-updater
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: Copy updater service file
+      ansible.builtin.copy:
+        src: ddns-update.service
+        dest: /etc/systemd/system/ddns-update.service
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Reload systemd daemons
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: Make sure BIND is running
+      ansible.builtin.systemd:
+        state: restarted
+        name: named
+        enabled: yes
+
+    - name: Make sure updater is running
+      ansible.builtin.systemd:
+        state: restarted
+        name: ddns-update
+        enabled: yes

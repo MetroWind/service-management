@@ -1,0 +1,12 @@
+$ORIGIN .
+$TTL 60
+xeno.darksair.org IN SOA darksair.org. chris.corsair.gmail.com. (
+        2022031507              ; serial
+        60                    ; refresh (1 hour)
+        30                     ; retry (15 minutes)
+        604800                  ; expire (1 week)
+        60                   ; minimum (1 day)
+        )
+      NS  darksair.org.
+$ORIGIN xeno.darksair.org.
+*.xeno.darksair.org.	IN	CNAME	xeno.darksair.org.
