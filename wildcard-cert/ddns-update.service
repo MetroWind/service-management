@@ -1,0 +1,13 @@
+[Unit]
+Description=Update the DDNS on demand
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/ddns-updater --port 8002
+Restart=on-abort
+KillSignal=SIGINT
+User=named
+Group=named
+
+[Install]
+WantedBy=multi-user.target

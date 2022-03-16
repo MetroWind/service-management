@@ -1,0 +1,16 @@
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'node'
+    static_configs:
+      - targets:
+{% for host in groups['arch'] %}
+          - "{{ host | replace('.xeno', '') }}:9100"
+{% endfor %}
+  - job_name: "VPS Nginx"
+    static_configs:
+      - targets: ['darksair.org:9113']
+
+rule_files:
+  - "/etc/prometheus/recording-rules.yaml"

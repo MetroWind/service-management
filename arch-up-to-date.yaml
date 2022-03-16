@@ -1,0 +1,16 @@
+---
+- name: All hosts up-to-date
+  hosts: arch
+  become: yes
+
+  tasks:
+    - name: Update pacman cache
+      community.general.pacman:
+        update_cache: yes
+    - name: Update keyring
+      community.general.pacman:
+        name: archlinux-keyring
+        state: latest
+    - name: Full system upgrade
+      community.general.pacman:
+        upgrade: yes

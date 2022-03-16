@@ -1,0 +1,7 @@
+= Service Management
+
+Files to manage my self-hosted services; mostly Ansible playbooks.
+
+* link:monitoring[monitoring]:: Prometheus, Grafana, etc.
+* link:wildcard-cert[wildcard-cert]:: Files to setup DDNS and Wildcard
+  certificate from Let’s Encrypt.
