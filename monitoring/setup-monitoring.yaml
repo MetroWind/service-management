@@ -5,6 +5,7 @@
 
   tasks:
     - name: Make sure components are installed
+      register: daemons
       community.general.pacman:
         name:
          - prometheus
@@ -12,7 +13,8 @@
          - loki
         state: present
 
-    - name: Copy config file to remote
+    - name: Copy Prometheus config file to remote
+      register: prometheus_conf
       ansible.builtin.template:
         src: config-prometheus.yaml
         dest: /etc/prometheus/prometheus.yml
@@ -21,6 +23,7 @@
         mode: '640'
 
     - name: Copy recording rules file to remote
+      register: recording_rules
       ansible.builtin.copy:
         src: recording-rules.yaml
         dest: /etc/prometheus/recording-rules.yaml
@@ -29,6 +32,7 @@
         mode: '640'
 
     - name: Copy Grafana config to remote
+      register: grafana_conf
       ansible.builtin.copy:
         src: config-grafana.ini
         dest: /etc/grafana.ini
@@ -37,6 +41,7 @@
         mode: '640'
 
     - name: Copy Loki config to remote
+      register: loki_conf
       ansible.builtin.copy:
         src: config-loki.yaml
         dest: /etc/loki/loki.yaml
@@ -45,18 +50,21 @@
         mode: '644'
 
     - name: Make sure Prometheus is running and enabled
+      when: daemons.changed or prometheus_conf.changed or recording_rules.changed
       ansible.builtin.systemd:
         state: restarted
         name: prometheus
         enabled: yes
 
     - name: Make sure Loki is running and enabled
+      when: daemons.changed or loki_conf.changed
       ansible.builtin.systemd:
         state: restarted
         name: loki
         enabled: yes
 
     - name: Make sure Grafana is running and enabled
+      when: daemons.changed or grafana_conf.changed
       ansible.builtin.systemd:
         state: restarted
         name: grafana
