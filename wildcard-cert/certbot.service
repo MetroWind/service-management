@@ -1,0 +1,6 @@
+[Unit]
+Description=Let's Encrypt renewal
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/certbot renew --quiet --agree-tos --manual --preferred-challenges=dns --manual-auth-hook /usr/local/bin/letsencrypt-dns01-update.sh --deploy-hook "systemctl reload httpd.service"
