@@ -1,0 +1,158 @@
+# This builds dendrite from AUR.
+#
+# Require Amalthus to be running. Requires that the login user is
+# NOPASSWD for pacman in sudoer on Amalthus.
+
+---
+- name: Build Dendrite
+  hosts: amalthus.xeno
+  vars:
+    pkgver: ""
+    pkgrel: ""
+  tasks:
+    - name: Download AUR source
+      get_url:
+        url: https://aur.archlinux.org/cgit/aur.git/snapshot/dendrite.tar.gz
+        dest: ~/dendrite.tar.gz
+        mode: 0644
+
+    - name: Extract AUR source
+      ansible.builtin.unarchive:
+        src: "~/dendrite.tar.gz"
+        dest: "~"
+        remote_src: yes
+
+    - name: Get package version
+      register: pkgver_result
+      ansible.builtin.shell:
+        cmd: "fgrep pkgver= PKGBUILD  | sed -E 's/pkgver=(.*)/\\1/g'"
+        chdir: ~/dendrite
+
+    - name: Get package build version
+      register: pkgrel_result
+      ansible.builtin.shell:
+        cmd: "fgrep pkgrel= PKGBUILD  | sed -E 's/pkgrel=(.*)/\\1/g'"
+        chdir: ~/dendrite
+
+    - set_fact:
+        pkgver: "{{ pkgver_result.stdout }}"
+        pkgrel: "{{ pkgrel_result.stdout }}"
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: ~/dendrite
+        creates: "~/dendrite/dendrite-{{ pkgver }}-{{ pkgrel }}-x86_64.pkg.tar.zst"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/dendrite/dendrite-{{ pkgver }}-{{ pkgrel }}-x86_64.pkg.tar.zst"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: ~/dendrite
+        state: absent
+
+    - name: Remove AUR file
+      ansible.builtin.file:
+        path: ~/dendrite.tar.gz
+        state: absent
+
+- name: Setup database
+  hosts: brighid.xeno
+  become: yes
+  vars_prompt:
+    - name: db_password_input
+      prompt: Database password
+  tasks:
+    - set_fact:
+        db_password: "{{ db_password_input }}"
+
+    # Setup DB
+    - name: Ensure psycopg2 is installed
+      community.general.pacman:
+        name: python-psycopg2
+        state: present
+
+    - name: Ensure DB user exist
+      community.postgresql.postgresql_user:
+        name: matrix
+        password: "{{ db_password }}"
+
+    - name: Ensure DB exist
+      community.postgresql.postgresql_db:
+        name: matrix
+        owner: matrix
+
+- name: Deploy Dendrite
+  hosts: obrona.xeno
+  become: yes
+  vars:
+    pkgver: "{{ hostvars['amalthus.xeno']['pkgver'] }}"
+    pkgrel: "{{ hostvars['amalthus.xeno']['pkgrel'] }}"
+    shared_secret: "{{ lookup('community.general.random_string', special=False) }}"
+    db_password: "{{ hostvars['brighid.xeno']['db_password'] }}"
+
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/dendrite-{{ pkgver }}-{{ pkgrel }}-x86_64.pkg.tar.zst"
+        dest: /tmp/
+
+    # Install package from file doesn’t work until
+    # https://github.com/ansible-collections/community.general/issues/4285
+    # is upstream and is incorporated in Gentoo.
+    - name: Install package
+      ansible.builtin.command:
+        cmd: "pacman -U --noconfirm /tmp/dendrite-{{ pkgver }}-{{ pkgrel }}-x86_64.pkg.tar.zst"
+
+    - name: Copy config file
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/dendrite/config.yaml
+        owner: dendrite
+        group: dendrite
+        mode: 0600
+
+    - name: Copy Matrix cert
+      ansible.builtin.copy:
+        src: keys/server.crt
+        dest: /etc/dendrite/
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Copy Matrix key
+      ansible.builtin.copy:
+        src: keys/matrix_key.pem
+        dest: /etc/dendrite/
+        owner: dendrite
+        group: dendrite
+        mode: 0600
+
+    - name: Copy server key
+      ansible.builtin.copy:
+        src: keys/server.key
+        dest: /etc/dendrite/
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: dendrite.service
+        dest: /etc/systemd/system/
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Make sure Dentrite is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: dendrite
+        enabled: yes
+
+    - debug:
+        msg: "Shared secret is {{ shared_secret }}"
