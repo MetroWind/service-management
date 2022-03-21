@@ -1,0 +1,47 @@
+---
+- name: Setup Miniflux
+  hosts: brighid.xeno
+  become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name:
+          - miniflux
+        state: present
+
+    # Setup DB
+    - name: Ensure psycopg2 is installed
+      community.general.pacman:
+        name: python-psycopg2
+        state: present
+
+    - name: Ensure DB user exist
+      community.postgresql.postgresql_user:
+        name: miniflux
+        password: "{{ db_password }}"
+
+    - name: Ensure DB exist
+      community.postgresql.postgresql_db:
+        name: miniflux
+        owner: miniflux
+
+    - name: Copy config file to remote
+      ansible.builtin.template:
+        src: miniflux.conf
+        dest: /etc/miniflux.conf
+        owner: miniflux
+        group: miniflux
+        mode: '600'
+
+    # Start service
+    - name: Make sure miniflux is started and enabed
+      ansible.builtin.systemd:
+        state: restarted
+        enabled: yes
+        name: miniflux
+
+    - debug:
+        msg: "Run miniflux -create-admin to create admin user"
