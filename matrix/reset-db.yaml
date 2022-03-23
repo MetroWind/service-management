@@ -1,5 +1,15 @@
 ---
-- name: Reset Postgres for KeyCloak
+- name: Stop Dendrite service
+  hosts: obrona.xeno
+  become: yes
+  tasks:
+    - name: Make sure Dentrite is running and enabled
+      ansible.builtin.systemd:
+        state: stopped
+        name: dendrite
+        enabled: no
+
+- name: Reset Postgres for dendrite
   hosts: brighid.xeno
   become: yes
 
