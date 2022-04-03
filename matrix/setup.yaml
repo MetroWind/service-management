@@ -1,11 +1,12 @@
----
-- name: Download Conduit
+- name: Setup Conduit
   hosts: obrona.xeno
   become: yes
+  vars:
+    branch: next                # next or master
   tasks:
     - name: Download binary
       get_url:
-        url: "https://gitlab.com/famedly/conduit/-/jobs/artifacts/master/raw/conduit-x86_64-unknown-linux-musl?job=build:release:cargo:x86_64-unknown-linux-musl"
+        url: "https://gitlab.com/famedly/conduit/-/jobs/artifacts/{{ branch }}/raw/conduit-x86_64-unknown-linux-musl?job=build:release:cargo:x86_64-unknown-linux-musl"
         dest: /usr/local/bin/matrix-conduit
         mode: 0755
     - name: Create sysuser dir
