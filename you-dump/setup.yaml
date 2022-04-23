@@ -1,0 +1,74 @@
+- name: Build You-Dump
+  hosts: amalthus.xeno
+  tasks:
+    - name: Download source
+      ansible.builtin.git:
+        repo: https://github.com/MetroWind/you-dump.git
+        dest: ~/pkgs/you-dump
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/you-dump/package/archlinux"
+        creates: "~/pkgs/you-dump/package/archlinux/you-dump-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 you-dump-*-x86_64.pkg.tar.zst"
+        chdir: ~/pkgs/you-dump/package/archlinux
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/you-dump/package/archlinux/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: ~/pkgs/you-dump
+        state: absent
+
+    - name: Remove other build files
+      ansible.builtin.file:
+        path: ~/.rustup
+        state: absent
+
+- name: Deploy You-Dump
+  hosts: adenine.xeno
+  become: yes
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    # Install package from file doesn’t work until
+    # https://github.com/ansible-collections/community.general/issues/4285
+    # is upstream and is incorporated in Gentoo.
+    - name: Install package
+      ansible.builtin.command:
+        cmd: "pacman -U --noconfirm /tmp/{{ package_file }}"
+
+    - name: Install ffmpeg
+      ansible.builtin.command:
+        cmd: "pacman -Sy --noconfirm --needed --asdeps ffmpeg"
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: you-dump.toml
+        dest: /etc/you-dump.toml
+
+    - name: Make sure You-Dump is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: you-dump
+        enabled: yes
