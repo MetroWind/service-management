@@ -1,0 +1,6 @@
+download_dir = "/mnt/downloads/you-dump"
+ydl_exec = "yt-dlp"
+static_dir = "/var/lib/you-dump/static"
+listen_address = "0.0.0.0"
+listen_port = 8321
+log_timestamp = false
