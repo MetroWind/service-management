@@ -2,7 +2,7 @@
   hosts: obrona.xeno
   become: yes
   vars:
-    branch: next                # next or master
+    branch: v0.4.0                # next or master
   tasks:
     - name: Download binary
       get_url:
