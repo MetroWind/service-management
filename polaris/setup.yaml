@@ -1,0 +1,97 @@
+- name: Build package
+  hosts: amalthus.xeno
+  tasks:
+    - name: Download PKGBUILD
+      ansible.builtin.get_url:
+        url: https://aur.archlinux.org/cgit/aur.git/snapshot/polaris.tar.gz
+        dest: /home/user/pkgs/polaris.tar.gz
+        mode: '0644'
+
+    - name: Extract foo.tgz into /var/lib/foo
+      ansible.builtin.unarchive:
+        src: /home/user/pkgs/polaris.tar.gz
+        dest: /home/user/pkgs
+        remote_src: yes
+
+    - name: Remove tarball
+      ansible.builtin.file:
+        path: /home/user/pkgs/polaris.tar.gz
+        state: absent
+
+    - name: Copy PKGBUILD
+      ansible.builtin.copy:
+        src: PKGBUILD
+        dest: /home/user/pkgs/polaris/PKGBUILD
+        mode: '0644'
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: "makepkg -sr --noconfirm -f"
+        chdir: "/home/user/pkgs/polaris"
+        creates: "/home/user/pkgs/polaris/polaris-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 polaris-*-x86_64.pkg.tar.zst"
+        chdir: /home/user/pkgs/polaris
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "/home/user/pkgs/polaris/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: /home/user/pkgs/polaris
+        state: absent
+
+    - name: Remove other build files
+      ansible.builtin.file:
+        path: ~/.rustup
+        state: absent
+
+- name: Deploy You-Dump
+  hosts: adenine.xeno
+  become: yes
+  vars_prompt:
+    - name: admin_password
+      prompt: Polaris admin password
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    - name: Install package
+      community.general.pacman:
+        name: "/tmp/{{ package_file }}"
+        state: present
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.toml
+        dest: /etc/polaris/config.toml
+        group: polaris
+        owner: polaris
+        mode: 0600
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: polaris
+        enabled: yes
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/{{ package_file }}"
+        state: absent
