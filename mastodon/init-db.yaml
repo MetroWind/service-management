@@ -1,0 +1,18 @@
+- name: Setup Mastodon DB
+  hosts: brighid.xeno
+  become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+  tasks:
+    # Setup DB
+    - name: Ensure psycopg2 is installed
+      community.general.pacman:
+        name: python-psycopg2
+        state: present
+
+    - name: Ensure DB user exist
+      community.postgresql.postgresql_user:
+        name: mastodon
+        password: "{{ db_password }}"
+        role_attr_flags: CREATEDB

@@ -1,0 +1,97 @@
+---
+- name: Export docker image
+  hosts: localhost
+  tasks:
+    - name: Build image
+      docker_image:
+        name: mastodon:latest
+        build:
+          path: "."
+          network: "host"
+        state: present
+        source: build
+
+    - name: Save image to tar
+      docker_image:
+        name: mastodon:latest
+        archive_path: mastodon.tar
+        source: local
+        state: present
+
+    # - name: Compress image
+    #   archive:
+    #     path: mastodon.tar
+    #     remove: yes
+
+- name: Setup Mastodon DB
+  ansible.builtin.import_playbook: init-db.yaml
+
+- name: Install Mastodon
+  hosts: perdido.xeno
+  become: yes
+  vars:
+    db_password: "{{ hostvars['brighid.xeno']['db_password'] }}"
+  tasks:
+    - name: Ensure docker and its python API is installed
+      community.general.pacman:
+        name:
+          - docker
+          - python-packaging
+          - python-docker
+        state: latest
+
+    - name: Make sure docker is enabled and running
+      ansible.builtin.systemd:
+        state: started
+        enabled: yes
+        name: docker
+
+    - name: Copy image to remote
+      ansible.builtin.copy:
+        src: mastodon.tar
+        dest: "/root/mastodon.tar"
+
+    - name: Remove old image from Docker
+      docker_image:
+        name: mastodon
+        state: absent
+        source: local
+
+    - name: Import image
+      register: image
+      docker_image:
+        load_path: "/root/mastodon.tar"
+        state: present
+        force_source: yes
+        name: mastodon
+        source: load
+        timeout: 3600
+
+    - name: Remove image file
+      file:
+        state: absent
+        path: "/root/mastodon.tar"
+
+    - name: Copy service file to remote
+      ansible.builtin.template:
+        src: docker.mastodon.service
+        dest: /etc/systemd/system/docker.mastodon.service
+        owner: root
+        group: wheel
+        mode: '600'
+
+    # Start service
+    - name: Make sure mastodon is started and enabed
+      ansible.builtin.systemd:
+        state: started
+        enabled: yes
+        name: docker.mastodon
+        daemon_reload: yes
+
+    - name: Restart mastodon
+      when: image.changed
+      ansible.builtin.systemd:
+        state: restarted
+        enabled: yes
+        name: docker.mastodon
+        daemon_reload: yes

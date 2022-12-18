@@ -1,0 +1,23 @@
+= Mastodon
+
+1. Run the Ansible playbook
+2. On the docker machine, run
++
+----
+sudo docker run --rm --name mastodon -it --entrypoint bash <name of image>
+----
++
+to open a shell from the image.
+3. In the shell run `bundle exec rake mastodon:setup` to do the
+initial setup. Choose to save the configuration file, which is not
+important because it’s in an image, but this will create the database
+schema and prompt to create the admin user.
+
+But... to quote my tweet:
+
+[quote, @MetroWind, https://twitter.com/MetroWind/status/1593418863873429509]
+____
+这两天折腾了一下，感觉就是以后类似的东西如果不是 C++ 或者 Rust 写的我还是不折腾了。我自己写了个 Dockerfile，到最后创建管理员账户的时候出错 Psych::BadAlias: Unknown alias: defaults，查了一下是 Ruby 和 Psych 版本不对付，whatever that is。呵呵⋯⋯
+
+我撤了，你们玩吧。
+____
