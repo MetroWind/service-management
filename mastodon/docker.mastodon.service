@@ -1,0 +1,14 @@
+[Unit]
+Description=Mastodon container
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker kill mastodon
+ExecStartPre=-/usr/bin/docker rm mastodon
+ExecStart=/usr/bin/docker run --rm --name mastodon -e DATABASE_URL="postgresql://mastodon{{ db_password }}@10.10.10.24" -p 3000:3000 -p 4000:4000 mastodon
+
+[Install]
+WantedBy=default.target
