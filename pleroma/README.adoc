@@ -1,0 +1,55 @@
+= Pleroma
+
+See https://docs.pleroma.social/backend/installation/otp_en/ for
+generic installation doc.
+
+1. Run the setup playbook
+2. Pleroma needs to write to `/opt/pleroma`. Run `sudo chown -R
+pleroma:pleroma /opt/pleroma`.
+3. Run initial migration:
++
+----
+sudo PLEROMA_CONFIG_PATH=/etc/pleroma/config.exs -s /bin/bash/opt/pleroma/bin/pleroma_ctl migrate
+----
+
+The current version (2.4.4) has a bug: it will use the internal domain
+even if it is configured to use a public domain via webfinger. As a
+result, query to
+`/.well-known/webfinger?resource=acct:id@public.domain` doesn’t work,
+because it doesn’t recognize `@public.domain`. One has to use
+`id@internal.domain` as full ID. This can be partially fixed by
+rewriting the query in Apache:
+----
+# Pleroma
+<VirtualHost *:443>
+    ServerName pleroma.xeno.darksair.org
+    SSLCertificateFile /etc/letsencrypt/live/xeno.darksair.org/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/xeno.darksair.org/privkey.pem
+
+    RewriteEngine On
+    RewriteCond %{HTTP:Connection} Upgrade [NC]
+    RewriteCond %{HTTP:Upgrade} websocket [NC]
+    RewriteRule /(.*) ws://127.0.0.1:7458/$1 [P,L]
+
+    RewriteCond %{REQUEST_URI} "/.well-known/webfinger"
+    RewriteCond %{QUERY_STRING} "resource=acct:(.*)@f.darksair.org"
+    RewriteRule ^ "http://127.0.0.1:7458/.well-known/webfinger?resource=acct:%1@pleroma.xeno.darksair.org**?**" [P,L]
+
+    RewriteCond %{REQUEST_URI} "/.well-known/webfinger"
+    RewriteCond %{QUERY_STRING} "resource=acct%3A(.*)%40f.darksair.org"
+    RewriteRule ^ "http://127.0.0.1:7458/.well-known/webfinger?resource=acct:%1@pleroma.xeno.darksair.org**?**" [P,L]
+
+    # ProxyRequests must be off or you open your server to abuse as an
+    # open proxy
+    ProxyRequests off
+    ProxyPass / http://127.0.0.1:7458/
+    ProxyPassReverse / http://127.0.0.1:7458/
+    ProxyPreserveHost On
+</VirtualHost>
+----
+
+But the displayed ID still uses the internal domain. This is said to
+be fixed in 2.5.
+
+- https://git.pleroma.social/pleroma/pleroma/-/issues/3002
+- https://git.pleroma.social/pleroma/pleroma/-/issues/2998

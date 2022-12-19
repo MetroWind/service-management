@@ -1,0 +1,108 @@
+- name: Build package
+  hosts: amalthus.xeno
+  vars:
+    pkg: pleroma-bin
+  tasks:
+    - name: Download PKGBUILD
+      ansible.builtin.get_url:
+        url: "https://aur.archlinux.org/cgit/aur.git/snapshot/{{ pkg }}.tar.gz"
+        dest: "/home/user/pkgs/{{ pkg }}.tar.gz"
+        mode: '0644'
+
+    - name: Extract PKGBUILD
+      ansible.builtin.unarchive:
+        src: "/home/user/pkgs/{{ pkg }}.tar.gz"
+        dest: /home/user/pkgs
+        remote_src: yes
+
+    - name: Remove tarball
+      ansible.builtin.file:
+        path: "/home/user/pkgs/{{ pkg }}.tar.gz"
+        state: absent
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: "makepkg -sr --noconfirm -f"
+        chdir: "/home/user/pkgs/{{ pkg }}"
+        creates: "/home/user/pkgs/{{ pkg }}/{{ pkg }}-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 {{ pkg }}-*-x86_64.pkg.tar.zst"
+        chdir: /home/user/pkgs/{{ pkg }}
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "/home/user/pkgs/{{ pkg }}/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "/home/user/pkgs/{{ pkg }}"
+        state: absent
+
+- name: Setup Pleroma DB
+  ansible.builtin.import_playbook: init-db.yaml
+
+- name: Deploy Pleroma
+  hosts: brighid.xeno
+  become: yes
+  vars:
+    db_password: "{{ hostvars['brighid.xeno']['db_password'] }}"
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    - name: Install package
+      community.general.pacman:
+        name: "/tmp/{{ package_file }}"
+        state: present
+
+    - name: Install some dependencies
+      community.general.pacman:
+        name:
+          - perl-image-exiftool
+          - ffmpeg
+          - imagemagick
+        state: present
+        reason: dependency
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: config.exs
+        dest: /etc/pleroma/config.exs
+        group: pleroma
+        owner: pleroma
+        mode: 0600
+
+    # Archlinux installs exiftool to /usr/bin/vendor_perl. Pleroma
+    # doesn’t see that.
+    - name: Link exiftool to /usr/local/bin
+      ansible.builtin.file:
+        src: /usr/bin/vendor_perl/exiftool
+        dest: /usr/local/bin/exiftool
+        owner: root
+        group: root
+        state: link
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: pleroma
+        enabled: yes
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/{{ package_file }}"
+        state: absent
