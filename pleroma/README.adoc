@@ -3,16 +3,16 @@
 See https://docs.pleroma.social/backend/installation/otp_en/ for
 generic installation doc.
 
-1. Run the setup playbook
+1. Run `make setup`
 2. Pleroma needs to write to `/opt/pleroma`. Run `sudo chown -R
 pleroma:pleroma /opt/pleroma`.
 3. Run initial migration:
 +
 ----
-sudo PLEROMA_CONFIG_PATH=/etc/pleroma/config.exs -s /bin/bash/opt/pleroma/bin/pleroma_ctl migrate
+sudo PLEROMA_CONFIG_PATH=/etc/pleroma/config.exs -s /opt/pleroma/bin/pleroma_ctl migrate
 ----
 
-The current version (2.4.4) has a bug: it will use the internal domain
+Version (2.4.4) has a bug: it will use the internal domain
 even if it is configured to use a public domain via webfinger. As a
 result, query to
 `/.well-known/webfinger?resource=acct:id@public.domain` doesn’t work,
@@ -53,3 +53,5 @@ be fixed in 2.5.
 
 - https://git.pleroma.social/pleroma/pleroma/-/issues/3002
 - https://git.pleroma.social/pleroma/pleroma/-/issues/2998
+
+UPDATE: well, this is not fixed in 2.5...

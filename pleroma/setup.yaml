@@ -3,22 +3,11 @@
   vars:
     pkg: pleroma-bin
   tasks:
-    - name: Download PKGBUILD
-      ansible.builtin.get_url:
-        url: "https://aur.archlinux.org/cgit/aur.git/snapshot/{{ pkg }}.tar.gz"
-        dest: "/home/user/pkgs/{{ pkg }}.tar.gz"
+    - name: Copy PKGBUILD files
+      ansible.builtin.copy:
+        src: pkg/
+        dest: "/home/user/pkgs/{{ pkg }}"
         mode: '0644'
-
-    - name: Extract PKGBUILD
-      ansible.builtin.unarchive:
-        src: "/home/user/pkgs/{{ pkg }}.tar.gz"
-        dest: /home/user/pkgs
-        remote_src: yes
-
-    - name: Remove tarball
-      ansible.builtin.file:
-        path: "/home/user/pkgs/{{ pkg }}.tar.gz"
-        state: absent
 
     - name: Build package
       ansible.builtin.command:
