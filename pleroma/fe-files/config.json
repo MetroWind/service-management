@@ -1,0 +1,6 @@
+{
+    "background": "/static/bg.svg",
+    "logoMask": false,
+    "logo": "/static/logo.png",
+    "nsfwCensorImage": "/static/nsfw.svg"
+}

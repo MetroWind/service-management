@@ -1,0 +1,11 @@
+- name: Deploy FE config
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy files to remote
+      ansible.builtin.copy:
+        src: fe-files/
+        dest: /var/lib/pleroma/static/static
+        group: pleroma
+        owner: pleroma
+        mode: 0644
