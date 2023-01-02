@@ -64,6 +64,14 @@
         owner: stash
         group: stash
 
+    - name: Copy config file
+      ansible.builtin.copy:
+        src: "stash.toml"
+        dest: "/etc/stash.toml"
+        owner: stash
+        group: stash
+        mode: 0644
+
     - name: Make sure Stash is running and enabled
       ansible.builtin.systemd:
         state: restarted
