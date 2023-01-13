@@ -1,0 +1,71 @@
+- name: Build Breed Web
+  hosts: amalthus.xeno
+  tasks:
+    - name: Download source
+      ansible.builtin.git:
+        repo: https://github.com/MetroWind/dwm2-tools.git
+        dest: ~/pkgs/dwm2-tools
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/dwm2-tools/breed-web/package/archlinux"
+        creates: "~/pkgs/dwm2-tools/breed-web/package/archlinux/breed-web-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 breed-web-*-x86_64.pkg.tar.zst"
+        chdir: ~/pkgs/dwm2-tools/breed-web/package/archlinux
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/dwm2-tools/breed-web/package/archlinux/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: ~/pkgs/dwm2-tools
+        state: absent
+
+    - name: Remove other build files
+      ansible.builtin.file:
+        path: ~/.rustup
+        state: absent
+
+- name: Deploy Breed Web
+  hosts: darksair.org
+  become: yes
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    - name: Install package
+      community.general.pacman:
+        name: "/tmp/{{ package_file }}"
+        state: present
+
+    - name: Copy config file
+      ansible.builtin.copy:
+        src: "breed-web.toml"
+        dest: "/etc/breed-web.toml"
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Make sure Breed Web is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: breed-web
+        enabled: yes
