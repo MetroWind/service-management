@@ -1,0 +1,10 @@
+- name: Update configuration
+  hosts: torna.xeno
+  become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+  tasks:
+    - name: Update config
+      ansible.builtin.include_tasks:
+        file: tasks-update-config.yaml
