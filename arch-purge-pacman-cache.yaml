@@ -1,0 +1,12 @@
+---
+- name: All hosts up-to-date
+  hosts: arch
+  become: yes
+
+  tasks:
+    - name: Purge pacman cache
+      ansible.builtin.command:
+        argv:
+          - pacman
+          - "--noconfirm"
+          - "-Scc"

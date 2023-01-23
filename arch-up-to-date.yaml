@@ -14,3 +14,6 @@
     - name: Full system upgrade
       community.general.pacman:
         upgrade: yes
+
+- name: Purge cache
+  ansible.builtin.import_playbook: arch-purge-pacman-cache.yaml
