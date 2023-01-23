@@ -1,0 +1,27 @@
+- name: Setup DB
+  hosts: brighid.xeno
+  become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+  vars:
+    db_name: blocky
+  tasks:
+    # Setup DB
+    - name: Ensure psycopg2 is installed
+      community.general.pacman:
+        name: python-psycopg2
+        state: present
+
+    - name: Ensure DB user exist
+      community.postgresql.postgresql_user:
+        name: "{{ db_name }}"
+        password: "{{ db_password }}"
+        # role_attr_flags: CREATEDB
+
+    - name: Create a DB
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_name }}"
+
+    - set_fact: db_password="{{ db_password }}"

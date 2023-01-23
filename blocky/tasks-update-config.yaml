@@ -1,0 +1,19 @@
+- name: Copy config
+  ansible.builtin.template:
+    src: config.yml
+    dest: /etc/blocky.yml
+    group: blocky
+    owner: blocky
+    mode: 0600
+
+- name: Make sure resolved is not running
+  ansible.builtin.systemd:
+    state: stopped
+    name: systemd-resolved
+    enabled: no
+
+- name: Make sure service is running and enabled
+  ansible.builtin.systemd:
+    state: restarted
+    name: blocky
+    enabled: yes

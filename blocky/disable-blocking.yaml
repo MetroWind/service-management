@@ -1,0 +1,6 @@
+- name: Disable blocking for 10 minutes
+  hosts: torna.xeno
+  tasks:
+    - name: Disable
+      ansible.builtin.command:
+        cmd: "blocky blocking disable -d 10m"

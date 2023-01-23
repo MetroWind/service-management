@@ -1,0 +1,79 @@
+- name: Build package
+  hosts: amalthus.xeno
+  vars:
+    package: blocky
+  tasks:
+    - name: Download PKGBUILD
+      ansible.builtin.get_url:
+        url: "https://aur.archlinux.org/cgit/aur.git/snapshot/{{ package }}.tar.gz"
+        dest: "/home/user/pkgs/{{ package }}.tar.gz"
+        mode: '0644'
+
+    - name: Extract PKGBUILD
+      ansible.builtin.unarchive:
+        src: "/home/user/pkgs/{{ package }}.tar.gz"
+        dest: /home/user/pkgs
+        remote_src: yes
+
+    - name: Remove tarball
+      ansible.builtin.file:
+        path: "/home/user/pkgs/{{ package }}.tar.gz"
+        state: absent
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: "makepkg -sr --noconfirm -f"
+        chdir: "/home/user/pkgs/{{ package }}"
+        creates: "/home/user/pkgs/{{ package }}/{{ package }}-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 {{ package }}-*-x86_64.pkg.tar.zst"
+        chdir: "/home/user/pkgs/{{ package }}"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "/home/user/pkgs/{{ package }}/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "/home/user/pkgs/{{ package }}"
+        state: absent
+
+- name: Setup DB
+  ansible.builtin.import_playbook: init-db.yaml
+
+- name: Deploy Blocky
+  hosts: torna.xeno
+  become: yes
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+    db_password: "{{ hostvars['brighid.xeno']['db_password'] }}"
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    - name: Install package
+      community.general.pacman:
+        name: "/tmp/{{ package_file }}"
+        state: present
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/{{ package_file }}"
+        state: absent
+
+    - name: Install config file
+      ansible.builtin.include_tasks:
+        file: tasks-update-config.yaml
