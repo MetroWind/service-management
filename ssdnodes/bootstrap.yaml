@@ -16,7 +16,7 @@
           - exa
           - bat
           - fakeroot
-          - cowsay
+          - patch
         state: present
 
     - name: Copy mirrorlist

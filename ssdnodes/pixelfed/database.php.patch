@@ -1,0 +1,11 @@
+--- database.php	2023-02-23 20:17:12.901046249 -0800
++++ database.php.new	2023-02-23 20:17:43.170043290 -0800
+@@ -112,7 +112,7 @@
+ 
+     'redis' => [
+ 
+-        'client' => env('REDIS_CLIENT', 'predis'),
++        'client' => env('REDIS_CLIENT', 'phpredis'),
+ 
+         'default' => [
+             'scheme'   => env('REDIS_SCHEME', 'tcp'),
