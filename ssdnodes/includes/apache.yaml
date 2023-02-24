@@ -1,0 +1,8 @@
+- name: Configure Apache
+  hosts: 2.darksair.org
+  tasks:
+    - name: Install packages
+      community.general.pacman:
+        name:
+          - apache
+        state: present

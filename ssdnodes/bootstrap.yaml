@@ -1,0 +1,79 @@
+# This file bootstrap a Arch Linux VPS from root login.
+- name: Bootstrap the VPS
+  hosts: mws.rocks
+  vars:
+    ansible_ssh_user: root
+  tasks:
+    - name: Install packages
+      community.general.pacman:
+        name:
+          - sudo
+          - zsh
+          - btop
+          - stow
+          - unzip
+          - git
+          - exa
+          - bat
+          - fakeroot
+          - cowsay
+        state: present
+
+    - name: Copy mirrorlist
+      ansible.builtin.copy:
+        src: mirrorlist
+        dest: /etc/pacman.d/mirrorlist
+        group: root
+        owner: root
+        mode: 0644
+
+    - name: Copy sudoers
+      ansible.builtin.copy:
+        src: sudoers
+        dest: /etc/sudoers
+        group: root
+        owner: root
+        mode: 0440
+
+    - name: Create user
+      ansible.builtin.user:
+        name: mw
+        create_home: true
+        group: users
+        groups:
+          - wheel
+        shell: /bin/zsh
+
+    - name: Add authorized key to root ssh
+      ansible.posix.authorized_key:
+        user: root
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJXooh7Ll4kqQUwONDCZi0UcXWON7p4kWNQrsbyNdxcx"
+        comment: work laptop
+    - name: Add authorized key to root ssh
+      ansible.posix.authorized_key:
+        user: root
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFk6ds0+QHf21IHiAQhY9RCYSslFz7EPnupW+/3OEe9V"
+        comment: PGP subkey
+
+    - name: Add authorized key to user ssh
+      ansible.posix.authorized_key:
+        user: mw
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJXooh7Ll4kqQUwONDCZi0UcXWON7p4kWNQrsbyNdxcx"
+        comment: work laptop
+    - name: Add authorized key to user ssh
+      ansible.posix.authorized_key:
+        user: mw
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFk6ds0+QHf21IHiAQhY9RCYSslFz7EPnupW+/3OEe9V"
+        comment: PGP subkey
+
+    - name: Disable root SSH with password
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin .*"
+        line: "PermitRootLogin prohibit-password"
+
+    - name: Restart sshd
+      ansible.builtin.systemd:
+        state: restarted
+        name: sshd
+        enabled: yes
