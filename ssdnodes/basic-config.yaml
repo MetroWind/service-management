@@ -1,0 +1,20 @@
+# Config basic user run time env. Does not need sudo
+- name: Configure the VPS
+  hosts: 2.darksair.org
+  tasks:
+    - name: Unpack dot file repo
+      ansible.builtin.unarchive:
+        remote_src: true
+        src: "https://github.com/MetroWind/dotfiles-mac/archive/refs/heads/master.zip"
+        dest: /tmp
+
+    - name: Configure Zsh
+      ansible.builtin.copy:
+        src: "/tmp/dotfiles-mac-master/zsh/files/"
+        dest: "/home/mw"
+        remote_src: true
+
+    - name: Remove temp files
+      ansible.builtin.file:
+        path: "/tmp/dotfiles-mac-master"
+        state: absent

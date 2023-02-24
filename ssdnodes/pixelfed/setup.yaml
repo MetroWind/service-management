@@ -1,0 +1,44 @@
+- name: Prepare enviornment
+  hosts: 2.darksair.org
+  become: yes
+  tasks:
+    - name: Install dependencies
+      community.general.pacman:
+        name:
+          - php
+          - php-intl
+          - redis
+          - php-fpm
+          - php-gd
+          - php-imagick
+          - php-redis
+          - php-pgsql
+          - jpegoptim
+          - optipng
+          - pngquant
+          - imagemagick
+          - ffmpeg
+        state: present
+        reason: dependency
+
+    - name: Enable PHP extensions
+      ansible.builtin.copy:
+        src: php.ini
+        dest: "/etc/php/conf.d/pixelfed.ini"
+    - name: Enable PHP extensions
+      ansible.builtin.copy:
+        src: php-igbinary.ini
+        dest: "/etc/php/conf.d/igbinary.ini"
+    - name: Enable PHP extensions
+      ansible.builtin.copy:
+        src: php-imagick.ini
+        dest: "/etc/php/conf.d/imagick.ini"
+    - name: Enable PHP extensions
+      ansible.builtin.copy:
+        src: php-redis.ini
+        dest: "/etc/php/conf.d/redis.ini"
+
+    - name: Create PHP-FPM pool
+      ansible.builtin.copy:
+        src: php-fpm-pixelfed.conf
+        dest: /etc/php/php-fpm.d/pixelfed.conf
