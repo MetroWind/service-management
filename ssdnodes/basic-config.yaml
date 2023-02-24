@@ -1,6 +1,6 @@
 # Config basic user run time env. Does not need sudo
 - name: Configure the VPS
-  hosts: 2.darksair.org
+  hosts: mws.rocks
   tasks:
     - name: Unpack dot file repo
       ansible.builtin.unarchive:
@@ -11,7 +11,7 @@
     - name: Configure Zsh
       ansible.builtin.copy:
         src: "/tmp/dotfiles-mac-master/zsh/files/"
-        dest: "/home/mw"
+        dest: "{{ ansible_env.HOME }}"
         remote_src: true
 
     - name: Remove temp files
