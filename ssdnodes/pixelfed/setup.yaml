@@ -1,6 +1,9 @@
 - name: Prepare enviornment
   hosts: mws.rocks
   become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
   tasks:
     - name: Install dependencies
       community.general.pacman:
@@ -47,7 +50,12 @@
     - name: Copy Redis config
       ansible.builtin.copy:
         src: redis.conf
-        dest: /etc/redis.conf
+        dest: /etc/redis/redis.conf
+
+    - name: Make sure redis is running
+      ansible.builtin.systemd:
+        state: restarted
+        name: redis
 
     - name: Make sure user definition dir exists
       ansible.builtin.file:
@@ -71,37 +79,11 @@
         dest: /srv/http/pixelfed
         force: true
 
-    - name: Create env file
-      ansible.builtin.copy:
-        remote_src: true
-        src: /srv/http/pixelfed/.env.example
+    - name: Copy env file
+      ansible.builtin.template:
         dest: /srv/http/pixelfed/.env
-
-    - name: Edit env file
-      ansible.builtin.lineinfile:
-        path: /srv/http/pixelfed/.env
-        regexp: "^DB_CONNECTION=.*"
-        line: 'DB_CONNECTION="pgsql"'
-    - name: Edit env file
-      ansible.builtin.lineinfile:
-        path: /srv/http/pixelfed/.env
-        regexp: "^DB_SOCKET=.*"
-        line: 'DB_SOCKET="/run/postgresql/postgresql.sock"'
-    - name: Edit env file
-      ansible.builtin.lineinfile:
-        path: /srv/http/pixelfed/.env
-        regexp: "^REDIS_HOST=.*"
-        line: 'REDIS_HOST="/run/redis/redis.sock"'
-    - name: Edit env file
-      ansible.builtin.lineinfile:
-        path: /srv/http/pixelfed/.env
-        regexp: "^REDIS_PORT=.*"
-        line: 'REDIS_PORT="null"'
-    - name: Edit env file
-      ansible.builtin.lineinfile:
-        path: /srv/http/pixelfed/.env
-        regexp: "^IMAGE_DRIVER=.*"
-        line: 'IMAGE_DRIVER="imagick"'
+        src: env
+        mode: 0600
 
     - name: Edit database config PHP
       ansible.posix.patch:
@@ -115,6 +97,18 @@
         group: pixelfed
         recurse: true
 
+    - name: Ensure DB user exist
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: pixelfed
+        password: "{{ db_password }}"
+
+    - name: Ensure DB exist
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: pixelfed
+        owner: pixelfed
+
 - name: Prepare enviornment as sys user
   hosts: mws.rocks
   become: yes
@@ -126,13 +120,16 @@
         chdir: /srv/http/pixelfed
 
     - name: Composer install
-      ansible.builtin.command: "composer install --no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader"
-      chdir: /srv/http/pixelfed
+      ansible.builtin.command:
+        cmd: "composer install --no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader"
+        chdir: /srv/http/pixelfed
 
     - name: Generate key
-      ansible.builtin.command: "php artisan key:generate"
-      chdir: /srv/http/pixelfed
+      ansible.builtin.command:
+        cmd: "php artisan key:generate"
+        chdir: /srv/http/pixelfed
 
     - name: Other PHP commands
-      ansible.builtin.shell: "php artisan storage:link && php artisan horizon:install && php artisan horizon:publish && php artisan migrate --force && php artisan import:cities"
-      chdir: /srv/http/pixelfed
+      ansible.builtin.shell:
+        cmd: "php artisan storage:link && php artisan horizon:install && php artisan horizon:publish && php artisan migrate --force && php artisan import:cities"
+        chdir: /srv/http/pixelfed
