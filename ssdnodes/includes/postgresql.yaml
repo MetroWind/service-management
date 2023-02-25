@@ -1,0 +1,36 @@
+- name: Install PostgresSQL
+  hosts: mws.rocks
+  become: yes
+  tasks:
+    - name: Install packages
+      community.general.pacman:
+        name:
+          - postgresql
+          - python-psycopg2
+        state: present
+
+    - name: Initial config
+      become_user: postgres
+      ansible.builtin.shell: |
+        if ! test -e /var/lib/postgres/data; then
+        initdb -D /var/lib/postgres/data
+        fi
+
+    - name: Configure access
+      ansible.builtin.lineinfile:
+        path: /var/lib/postgres/data/pg_hba.conf
+        regexp: '^local\s+all\s+all\s+trust$'
+        line: 'local all postgres peer'
+
+    - name: Only allow local connection
+      ansible.builtin.lineinfile:
+        path: /var/lib/postgres/data/postgresql.conf
+        regexp: >-
+          ^listen_addresses\s*=\s*''
+        line: "listen_addresses = 'localhost'"
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: postgresql
+        enabled: yes
