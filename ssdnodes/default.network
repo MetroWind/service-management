@@ -1,0 +1,9 @@
+[Match]
+Name=enp3s0
+
+[Network]
+Address=2602:ff16:1:0:1:479:0:1/64
+Gateway=fe80::1
+
+Address=104.225.221.187/24
+Gateway=104.225.221.1
