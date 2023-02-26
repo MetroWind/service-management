@@ -1,8 +1,72 @@
 - name: Configure Apache
-  hosts: 2.darksair.org
+  hosts: mws.rocks
+  become: yes
   tasks:
     - name: Install packages
       community.general.pacman:
         name:
           - apache
         state: present
+
+    - name: Enable proxy support in Apache
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+proxy_module'
+        line: "LoadModule proxy_module modules/mod_proxy.so"
+    - name: Enable rewrite support in Apache
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+rewrite_module'
+        line: "LoadModule rewrite_module modules/mod_rewrite.so"
+    - name: Enable HTTP proxy support in Apache
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+proxy_http_module'
+        line: "LoadModule proxy_http_module modules/mod_proxy_http.so"
+
+    - name: Set default server admin
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin\s+'
+        line: "ServerAdmin chris.corsair@gmail.com"
+
+    - name: Set default server name
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^(#\s+)?ServerName\s+'
+        insertafter: '^ServerAdmin\s+'
+        line: "ServerName mws.rocks"
+
+    - name: Remove default directory settings
+      ansible.builtin.replace:
+        regexp: '^<Directory "/srv/http">$.*^</Directory>$'
+        replace: ""
+
+    - name: Add virtual host name in log
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^\s+LogFormat\s+.*\s+common$'
+        line: 'LogFormat "%h %l %u %t %v \"%r\" %>s %b" common'
+
+    - name: Create vhosts directory
+      ansible.builtin.file:
+        path: /etc/httpd/conf/vhosts
+        state: directory
+
+    - name: Create root vhost
+      ansible.builtin.copy:
+        src: http-root.conf
+        dest: /etc/httpd/conf/vhosts/root.conf
+
+    - name: Enable root vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/root\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/root.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
