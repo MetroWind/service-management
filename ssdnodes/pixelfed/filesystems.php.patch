@@ -1,0 +1,15 @@
+--- filesystems.php	2023-02-26 13:57:08.030035215 -0800
++++ filesystems.php.new	2023-02-26 13:58:28.653331554 -0800
+@@ -46,6 +46,12 @@
+         'local' => [
+             'driver' => 'local',
+             'root'   => storage_path('app'),
++            'permissions' => [
++                'dir' => [
++                    'public' => 0755,
++                    'private' => 0755,
++                ],
++            ],
+         ],
+ 
+         'public' => [
