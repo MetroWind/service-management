@@ -52,15 +52,11 @@
         src: redis.conf
         dest: /etc/redis/redis.conf
 
-    - name: Make sure redis is running
+    - name: Restart redis
       ansible.builtin.systemd:
         state: restarted
         name: redis
-
-    - name: Make sure user definition dir exists
-      ansible.builtin.file:
-        path: /etc/sysusers.d
-        state: directory
+        enabled: yes
 
     - name: Copy user definition
       ansible.builtin.copy:
@@ -90,6 +86,11 @@
         dest: /srv/http/pixelfed/config/database.php
         src: database.php.patch
 
+    - name: Edit filesystem config PHP
+      ansible.posix.patch:
+        dest: /srv/http/pixelfed/config/filesystems.php
+        src: filesystems.php.patch
+
     - name: Set owner
       ansible.builtin.file:
         path: /srv/http/pixelfed
@@ -109,6 +110,30 @@
         name: pixelfed
         owner: pixelfed
 
+    - name: Enable fcgi support in Apache
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+proxy_fcgi_module'
+        line: "LoadModule proxy_fcgi_module modules/mod_proxy_fcgi.so"
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/pixelfed.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/pixelfed\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/pixelfed.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
 - name: Prepare enviornment as sys user
   hosts: mws.rocks
   become: yes
@@ -121,7 +146,9 @@
 
     - name: Composer install
       ansible.builtin.command:
-        cmd: "composer install --no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader"
+        cmd: >-
+          composer install --no-ansi --no-interaction --no-progress
+          --no-scripts --optimize-autoloader
         chdir: /srv/http/pixelfed
 
     - name: Generate key
@@ -131,5 +158,45 @@
 
     - name: Other PHP commands
       ansible.builtin.shell:
-        cmd: "php artisan storage:link && php artisan horizon:install && php artisan horizon:publish && php artisan migrate --force && php artisan import:cities"
+        cmd: >-
+          php artisan storage:link && php artisan horizon:install &&
+          php artisan horizon:publish && php artisan migrate --force
+          && php artisan import:cities && php artisan passport:install
         chdir: /srv/http/pixelfed
+
+- name: Configure daemons
+  hosts: mws.rocks
+  become: yes
+  tasks:
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: pixelfed-queue.service
+        dest: /etc/systemd/system/
+
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: pixelfed-scheduler.service
+        dest: /etc/systemd/system/
+
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: pixelfed-scheduler.timer
+        dest: /etc/systemd/system/
+
+    - name: Restart PHP-FPM
+      ansible.builtin.systemd:
+        state: restarted
+        name: php-fpm
+        enabled: yes
+
+    - name: Make sure scheduler is running
+      ansible.builtin.systemd:
+        state: started
+        name: pixelfed-scheduler.timer
+        enabled: yes
+
+    - name: Restart queue
+      ansible.builtin.systemd:
+        state: restarted
+        name: pixelfed-queue.service
+        enabled: yes

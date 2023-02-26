@@ -1,4 +1,4 @@
-APP_NAME="Pixelfed"
+APP_NAME="MetroWind’s Pixelfed"
 APP_ENV="production"
 APP_KEY=
 APP_DEBUG="false"
@@ -48,11 +48,11 @@ LOG_CHANNEL="stack"
 HORIZON_PREFIX="horizon-"
 
 # ActivityPub Configuration
-ACTIVITY_PUB="false"
-AP_REMOTE_FOLLOW="false"
-AP_INBOX="false"
-AP_OUTBOX="false"
-AP_SHAREDINBOX="false"
+ACTIVITY_PUB="true"
+AP_REMOTE_FOLLOW="true"
+AP_INBOX="true"
+AP_OUTBOX="true"
+AP_SHAREDINBOX="true"
 
 # Experimental Configuration
 EXP_EMC="true"

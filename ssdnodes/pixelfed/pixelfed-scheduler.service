@@ -1,0 +1,7 @@
+[Unit]
+Description=Pixelfeed horizon worker
+After=network.target postgresql.service
+
+[Service]
+ExecStart=/usr/bin/php /srv/http/pixelfed/artisan schedule:run
+User=http
