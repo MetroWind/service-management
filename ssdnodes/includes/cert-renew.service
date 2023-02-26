@@ -1,0 +1,7 @@
+[Unit]
+Description=Renew Lets Encrypt certificate
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/certbot renew
+ExecStartPost=systemctl restart httpd

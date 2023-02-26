@@ -1,0 +1,68 @@
+- name: Set up HTTPS
+  hosts: mws.rocks
+  become: yes
+  tasks:
+    - name: Install packages
+      community.general.pacman:
+        name: certbot
+        state: present
+
+    - name: Obtain a cert
+      ansible.builtin.command: >-
+        certbot certonly -n --webroot -w /srv/http/root -d mws.rocks -d
+        photos.mws.rocks --agree-tos -m chris.corsair@gmail.com
+        --preferred-challenges http-01 --server
+        https://acme-v02.api.letsencrypt.org/directory
+
+    - name: Copy cert renew service file
+      ansible.builtin.copy:
+        src: cert-renew.service
+        dest: /etc/systemd/system/cert-renew.service
+    - name: Copy cert renew timer file
+      ansible.builtin.copy:
+        src: cert-renew.timer
+        dest: /etc/systemd/system/cert-renew.timer
+
+    - name: Start timer
+      ansible.builtin.systemd:
+        state: started
+        name: cert-renew.timer
+        enabled: yes
+
+    - name: Enabled SSL
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+ssl_module'
+        line: "LoadModule ssl_module modules/mod_ssl.so"
+    - name: Enabled socache_shmcb
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+socache_shmcb_module'
+        line: "LoadModule socache_shmcb_module modules/mod_socache_shmcb.so"
+    - name: Enabled HTTP/2
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+http2_module'
+        line: "LoadModule http2_module modules/mod_http2.so"
+    - name: Enabled HTTP/2 proxy
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*LoadModule\s+proxy_http2_module'
+        line: "LoadModule proxy_http2_module modules/mod_proxy_http2.so"
+
+    - name: Copy SSL config
+      ansible.builtin.copy:
+        src: httpd-ssl.conf
+        dest: /etc/httpd/conf/extra/httpd-ssl.conf
+
+    - name: Include HTTPS config
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#\s*Include conf/extra/httpd-ssl.conf'
+        line: "Include conf/extra/httpd-ssl.conf"
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes

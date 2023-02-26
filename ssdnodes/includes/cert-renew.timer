@@ -1,0 +1,9 @@
+[Unit]
+Description=Try renew Lets Encrypt certificate twice a day
+
+[Timer]
+OnUnitActiveSec=12h
+OnBootSec=1h
+
+[Install]
+WantedBy=timers.target
