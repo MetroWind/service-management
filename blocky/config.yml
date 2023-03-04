@@ -49,6 +49,8 @@ blocking:
         s.youtube.com
         video-stats.l.google.com
         youtubei.googleapis.com
+        # Wife likes to click ads.
+        /.*\.googleadservices\.com/
         # Required to make purchase on Epic store
         tracking.epicgames.com
         # Required by RedHat online learning
