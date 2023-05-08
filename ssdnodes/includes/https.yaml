@@ -9,10 +9,10 @@
 
     - name: Obtain a cert
       ansible.builtin.command: >-
-        certbot certonly -n --webroot -w /srv/http/root -d mws.rocks -d
-        photos.mws.rocks --agree-tos -m chris.corsair@gmail.com
-        --preferred-challenges http-01 --server
-        https://acme-v02.api.letsencrypt.org/directory
+        certbot certonly -n --webroot -w /srv/http/root --expand -d
+        mws.rocks -d photos.mws.rocks -d tube.mws.rocks --agree-tos -m
+        chris.corsair@gmail.com --preferred-challenges http-01
+        --server https://acme-v02.api.letsencrypt.org/directory
 
     - name: Copy cert renew service file
       ansible.builtin.copy:
