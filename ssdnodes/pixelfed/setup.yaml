@@ -1,5 +1,5 @@
 - name: Prepare enviornment
-  hosts: mws.rocks
+  hosts: ssh.mws.rocks
   become: yes
   vars_prompt:
     - name: db_password
