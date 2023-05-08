@@ -1,0 +1,78 @@
+- name: Deploy Tube
+  hosts: ssh.mws.rocks
+  become: yes
+  vars_prompt:
+    - name: upload_password
+      prompt: Password required for video upload
+  tasks:
+    - name: Download binary
+      ansible.builtin.get_url:
+        url: "https://git.mills.io/attachments/4873f46b-8056-4b62-890c-49db4ab0a8c9"
+        dest: /tmp/tube.tar.gz
+        mode: '0644'
+
+    - name: Extract binary
+      ansible.builtin.unarchive:
+        src: /tmp/tube.tar.gz
+        dest: /usr/local/bin
+        remote_src: yes
+
+    - name: Copy user definition
+      ansible.builtin.copy:
+        src: tube.sysusers
+        dest: /etc/sysusers.d/tube.conf
+
+    - name: Create user
+      ansible.builtin.command: systemd-sysusers
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.json
+        dest: /etc/tube.json
+        group: tube
+        owner: tube
+        mode: 0644
+
+    - name: Copy service file
+      ansible.builtin.template:
+        src: tube.service
+        dest: /etc/systemd/system/
+        mode: 0600
+
+    - name: Create working dir
+      ansible.builtin.file:
+        path: /var/lib/tube
+        state: directory
+        mode: '0755'
+        owner: tube
+        group: tube
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/tube.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/tube\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/tube.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: tube
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Remove tar file
+      ansible.builtin.file:
+        path: "/tmp/tube.tar.gz"
+        state: absent

@@ -1,0 +1,15 @@
+[Unit]
+Description=Tube server
+After=network.target
+
+[Service]
+Type=exec
+Environment="auth_password={{ upload_password }}"
+ExecStart=/usr/local/bin/tube -c /etc/tube.json
+WorkingDirectory=/var/lib/tube
+User=tube
+Group=tube
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
