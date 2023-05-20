@@ -1,4 +1,4 @@
-- name: Deploy Tube
+- name: Deploy MeTube
   hosts: ssh.mws.rocks
   become: yes
   vars_prompt:
@@ -7,15 +7,23 @@
   tasks:
     - name: Download binary
       ansible.builtin.get_url:
-        url: "https://git.mills.io/attachments/4873f46b-8056-4b62-890c-49db4ab0a8c9"
-        dest: /tmp/tube.tar.gz
+        url: "https://github.com/MetroWind/metube/releases/latest/download/metube-linux-amd64.xz"
+        dest: /tmp/metube.xz
         mode: '0644'
 
     - name: Extract binary
-      ansible.builtin.unarchive:
-        src: /tmp/tube.tar.gz
-        dest: /usr/local/bin
-        remote_src: yes
+      ansible.builtin.command:
+        cmd: unxz /tmp/metube.xz
+        creates: /tmp/metube
+
+    - name: Move binary to PATH
+      ansible.builtin.command:
+        cmd: mv /tmp/metube /usr/local/bin/metube
+
+    - name: Make the binary executable
+      ansible.builtin.file:
+        path: /usr/local/bin/metube
+        mode: '0755'
 
     - name: Copy user definition
       ansible.builtin.copy:
@@ -27,37 +35,67 @@
 
     - name: Copy config
       ansible.builtin.template:
-        src: config.json
-        dest: /etc/tube.json
+        src: config.toml
+        dest: /etc/metube.toml
         group: tube
         owner: tube
-        mode: 0644
+        mode: 0600
 
     - name: Copy service file
-      ansible.builtin.template:
-        src: tube.service
+      ansible.builtin.copy:
+        src: metube.service
         dest: /etc/systemd/system/
-        mode: 0600
+        mode: 0644
 
     - name: Create working dir
       ansible.builtin.file:
-        path: /var/lib/tube
+        path: /var/lib/metube
         state: directory
         mode: '0755'
         owner: tube
         group: tube
 
+    - name: Create video dir
+      ansible.builtin.file:
+        path: /var/lib/metube/videos
+        state: directory
+        mode: '0755'
+        owner: tube
+        group: tube
+
+    - name: Git checkout
+      ansible.builtin.git:
+        repo: 'https://github.com/MetroWind/metube.git'
+        dest: /tmp/metube
+        version: master
+
+    - name: Copy templates
+      ansible.builtin.copy:
+        remote_src: true
+        src: "/tmp/metube/templates"
+        dest: "/var/lib/metube"
+        group: tube
+        owner: tube
+
+    - name: Copy statics
+      ansible.builtin.copy:
+        remote_src: true
+        src: "/tmp/metube/static"
+        dest: "/var/lib/metube"
+        group: tube
+        owner: tube
+
     - name: Copy Apache config
       ansible.builtin.copy:
         src: apache.conf
-        dest: /etc/httpd/conf/vhosts/tube.conf
+        dest: /etc/httpd/conf/vhosts/metube.conf
 
     - name: Enable vhost
       ansible.builtin.lineinfile:
         path: /etc/httpd/conf/httpd.conf
-        regexp: '^#Include\s+conf/vhosts/tube\.conf'
+        regexp: '^#Include\s+conf/vhosts/metube\.conf'
         insertafter: "Probably not exists"
-        line: 'Include conf/vhosts/tube.conf'
+        line: 'Include conf/vhosts/metube.conf'
 
     - name: Restart Apache
       ansible.builtin.systemd:
@@ -68,11 +106,11 @@
     - name: Make sure service is running and enabled
       ansible.builtin.systemd:
         state: restarted
-        name: tube
+        name: metube
         enabled: yes
         daemon_reload: yes
 
-    - name: Remove tar file
+    - name: Remove source code
       ansible.builtin.file:
-        path: "/tmp/tube.tar.gz"
+        path: /tmp/metube
         state: absent

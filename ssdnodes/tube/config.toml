@@ -1,0 +1,10 @@
+video_dir = "/var/lib/metube/videos"
+static_dir = "/var/lib/metube/static"
+data_dir = "/var/lib/metube"
+listen_address = "127.0.0.1"
+listen_port = 31815
+password = "{{ upload_password }}"
+
+[site_info]
+site_title = "MetroWind’s Tube"
+footnote = "All contents are under CC BY 4.0 (Attribution 4.0 International)."
