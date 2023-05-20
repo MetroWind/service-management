@@ -1,0 +1,15 @@
+[Unit]
+Description=MeTube server
+After=network.target
+
+[Service]
+Type=exec
+Environment="RUST_LOG=metube=info"
+ExecStart=/usr/local/bin/metube
+WorkingDirectory=/var/lib/metube
+User=tube
+Group=tube
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
