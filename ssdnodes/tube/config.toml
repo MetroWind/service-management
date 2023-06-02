@@ -8,3 +8,4 @@ password = "{{ upload_password }}"
 [site_info]
 site_title = "MetroWind’s Tube"
 footnote = "All contents are under CC BY 4.0 (Attribution 4.0 International)."
+url_domain = "http://tube.mws.rocks"
