@@ -1,0 +1,42 @@
+---
+# TODO: Add steps to install Aria2 itself.
+
+- name: Setup Aria2 web UI
+  hosts: adenine.xeno
+  become: yes
+  vars:
+    ariang_version: "1.3.6"
+  tasks:
+    - name: Download the web UI package
+      ansible.builtin.get_url:
+        url: "https://github.com/mayswind/AriaNg/releases/download/{{ ariang_version }}/AriaNg-{{ ariang_version }}.zip"
+        dest: /tmp/ariang.zip
+
+    - name: Create a HTTP vhost dir
+      ansible.builtin.file:
+        path: /srv/http/aria2-webui
+        state: directory
+        mode: '0755'
+
+    - name: Unzip the web UI package
+      ansible.builtin.command: unzip /tmp/ariang.zip
+      args:
+        chdir: /srv/http/aria2-webui
+
+    - name: Remove file (delete file)
+      ansible.builtin.file:
+        path: /tmp/ariang.zip
+        state: absent
+
+    - name: Copy web UI config file to remote
+      ansible.builtin.copy:
+        src: httpd-vhost-aria2.conf
+        dest: /etc/httpd/conf/extra/httpd-vhost-aria2.conf
+        mode: '0644'
+
+    # Restart Apache
+    - name: Make sure miniflux is started and enabed
+      ansible.builtin.systemd:
+        state: restarted
+        enabled: yes
+        name: httpd
