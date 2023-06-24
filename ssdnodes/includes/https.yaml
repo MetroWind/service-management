@@ -1,5 +1,5 @@
 - name: Set up HTTPS
-  hosts: mws.rocks
+  hosts: ssh.mws.rocks
   become: yes
   tasks:
     - name: Install packages
@@ -10,9 +10,10 @@
     - name: Obtain a cert
       ansible.builtin.command: >-
         certbot certonly -n --webroot -w /srv/http/root --expand -d
-        mws.rocks -d photos.mws.rocks -d tube.mws.rocks --agree-tos -m
-        chris.corsair@gmail.com --preferred-challenges http-01
-        --server https://acme-v02.api.letsencrypt.org/directory
+        mws.rocks -d photos.mws.rocks -d tube.mws.rocks -d
+        lemmy.mws.rocks --agree-tos -m chris.corsair@gmail.com
+        --preferred-challenges http-01 --server
+        https://acme-v02.api.letsencrypt.org/directory
 
     - name: Copy cert renew service file
       ansible.builtin.copy:

@@ -1,0 +1,19 @@
+{
+  database: {
+    user: "lemmy"
+    # put your db-passwd from above
+    password: "{{ db_password }}"
+    database: "lemmy"
+  }
+  # replace with your domain
+  hostname: lemmy.mws.rocks
+  bind: "127.0.0.1"
+  port: 8536
+  federation: {
+    enabled: true
+  }
+  # remove this block if you don't require image hosting
+  pictrs: {
+    url: "http://localhost:48826/"
+  }
+}

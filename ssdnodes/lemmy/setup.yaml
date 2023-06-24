@@ -1,0 +1,249 @@
+- name: Deploy pict-rs
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Install dependencies
+      community.general.pacman:
+        name:
+          - imagemagick
+          - ffmpeg
+          - perl-image-exiftool
+        state: present
+
+    - name: Download binary
+      ansible.builtin.get_url:
+        url: https://git.asonix.dog/attachments/dd6d4b3c-6219-4930-b72d-fd37263279c1
+        dest: /usr/local/bin/pict-rs
+        mode: '0755'
+
+    - name: Copy user definition
+      ansible.builtin.copy:
+        src: pict-rs.sysusers
+        dest: /etc/sysusers.d/pict-rs.conf
+
+    - name: Create user
+      ansible.builtin.command: systemd-sysusers
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: pict-rs.toml
+        dest: /etc/pict-rs.toml
+        group: pict
+        owner: pict
+        mode: 0600
+
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: pict-rs.service
+        dest: /etc/systemd/system/
+        mode: 0644
+
+    - name: Create working dir
+      ansible.builtin.file:
+        path: /var/lib/pict-rs
+        state: directory
+        mode: '0755'
+        owner: pict
+        group: pict
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: pict-rs
+        enabled: yes
+        daemon_reload: yes
+
+- name: Build and install Lemmy
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    version: "0.18.0"
+  tasks:
+    - name: Install build and runtime dependencies
+      community.general.pacman:
+        name:
+          - rust
+          - protobuf
+          - pkgconf
+          - gcc-libs
+          - openssl
+          - postgresql-libs
+        state: present
+
+    - name: Create dir for source code
+      ansible.builtin.file:
+        path: /home/mw/programs
+        state: directory
+        mode: '0755'
+        owner: mw
+        group: users
+
+    - name: Download source code
+      ansible.builtin.unarchive:
+        src: "https://github.com/LemmyNet/lemmy/archive/refs/tags/{{ version }}.tar.gz"
+        dest: /home/mw/programs
+        remote_src: yes
+        owner: mw
+        group: users
+
+    - name: Download translations
+      ansible.builtin.unarchive:
+        src: "https://github.com/LemmyNet/lemmy-translations/archive/HEAD.zip"
+        dest: "/home/mw/programs/lemmy-{{ version }}/crates/utils/translations"
+        remote_src: yes
+        owner: mw
+        group: users
+
+    - name: Move translations
+      ansible.builtin.shell:
+        cmd: "mv lemmy-translations-*/* ./"
+        chdir: "/home/mw/programs/lemmy-{{ version }}/crates/utils/translations"
+
+    - name: Build Lemmy
+      ansible.builtin.shell:
+        cmd: "cargo build --release --frozen"
+        chdir: "/home/mw/programs/lemmy-{{ version }}"
+        creates: "/home/mw/programs/lemmy-{{ version }}/target/release/lemmy_server"
+
+    - name: Copy Lemmy binary
+      ansible.builtin.copy:
+        src: "/home/mw/programs/lemmy-{{ version }}/target/release/lemmy_server"
+        dest: /usr/local/bin/lemmy_server
+        owner: root
+        group: root
+        mode: '0755'
+        remote_src: yes
+
+    - name: Remove build dir
+      ansible.builtin.file:
+        path: "/home/mw/programs/lemmy-{{ version }}"
+        state: absent
+
+- name: Configure Lemmy
+  hosts: ssh.mws.rocks
+  become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+  tasks:
+    - name: Ensure DB user exist
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: lemmy
+        password: "{{ db_password }}"
+
+    - name: Ensure DB exist
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: lemmy
+        owner: lemmy
+
+    - name: Copy user definition
+      ansible.builtin.copy:
+        src: lemmy.sysusers
+        dest: /etc/sysusers.d/lemmy.conf
+
+    - name: Create user
+      ansible.builtin.command: systemd-sysusers
+
+    - name: Copy Lemmy configuration
+      ansible.builtin.template:
+        src: lemmy.hjson
+        dest: /etc/lemmy.hjson
+        owner: lemmy
+        group: lemmy
+        mode: 0600
+
+    - name: Copy Lemmy service file
+      ansible.builtin.template:
+        src: lemmy.service
+        dest: /etc/systemd/system/
+        mode: 0644
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: lemmy
+        enabled: yes
+        daemon_reload: yes
+
+- name: Build Lemmy UI
+  hosts: ssh.mws.rocks
+  tasks:
+    - name: Create dir for Lammy UI pkg
+      ansible.builtin.file:
+        path: /home/mw/programs/lemmy-ui
+        state: directory
+        mode: '0755'
+        owner: mw
+        group: users
+
+    - name: Copy PKGBUILD
+      ansible.builtin.copy:
+        src: lemmy-ui-pkg/PKGBUILD
+        dest: /home/mw/programs/lemmy-ui/
+
+    - name: Build Lemmy UI
+      ansible.builtin.shell:
+        cmd: "makepkg -srf --noconfirm"
+        chdir: "/home/mw/programs/lemmy-ui"
+        creates: "/home/mw/programs/lemmy-ui/lammy-ui-*-any.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 lemmy-ui-*-any.pkg.tar.zst"
+        chdir: /home/mw/programs/lemmy-ui
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+- name: Deploy Lemmy UI
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    package_file: "{{ hostvars['ssh.mws.rocks']['package_file'] }}"
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: "/home/mw/programs/lemmy-ui/{{ package_file }}"
+        state: present
+
+    - name: Copy Lemmy UI service file
+      ansible.builtin.copy:
+        src: lemmy-ui.service
+        dest: /etc/systemd/system/
+        mode: 0644
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/lemmy.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/lemmy\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/lemmy.conf'
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: lemmy-ui
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Remove build dir
+      ansible.builtin.file:
+        path: "/home/mw/programs/lemmy-ui"
+        state: absent

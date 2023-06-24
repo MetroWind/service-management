@@ -1,0 +1,21 @@
+[Unit]
+Description=Lemmy - A link aggregator for the fediverse
+After=network.target
+
+[Service]
+User=lemmy
+ExecStart=/usr/local/bin/lemmy_server
+Environment=LEMMY_CONFIG_LOCATION=/etc/lemmy.hjson
+# remove these two lines if you don't need pict-rs
+Environment=PICTRS_PATH=/var/lib/pict-rs
+Environment=PICTRS_ADDR=127.0.0.1:48826
+Restart=on-failure
+
+# Hardening
+ProtectSystem=yes
+PrivateTmp=true
+MemoryDenyWriteExecute=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
