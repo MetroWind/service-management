@@ -1,0 +1,14 @@
+[Unit]
+Description=Pict-rs server
+After=network.target
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/pict-rs -c /etc/pict-rs.toml run
+WorkingDirectory=/var/lib/pict-rs
+User=pict
+Group=pict
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

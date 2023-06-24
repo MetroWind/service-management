@@ -1,6 +1,6 @@
 # This file bootstrap a Arch Linux VPS from root login.
 - name: Bootstrap the VPS
-  hosts: mws.rocks
+  hosts: ssh.mws.rocks
   vars:
     ansible_ssh_user: root
   tasks:
@@ -25,6 +25,7 @@
           - qemu-guest-agent
           - wget
           - nano
+          - pkgconf
         state: present
 
     - name: Copy mirrorlist

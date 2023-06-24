@@ -1,0 +1,23 @@
+[Unit]
+Description=Lemmy UI - Web frontend for Lemmy
+After=lemmy.service
+Before=httpd.service
+
+[Service]
+User=lemmy
+WorkingDirectory=/usr/share/lemmy-ui
+ExecStart=/usr/bin/node dist/js/server.js
+Environment=LEMMY_UI_LEMMY_INTERNAL_HOST=localhost:8536
+Environment=LEMMY_UI_HOST=127.0.0.1:1234
+Environment=LEMMY_UI_LEMMY_EXTERNAL_HOST=lemmy.mws.rocks
+Environment=LEMMY_UI_HTTPS=false
+Environment=RUST_LOG=info
+Restart=on-failure
+
+# Hardening
+ProtectSystem=full
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
