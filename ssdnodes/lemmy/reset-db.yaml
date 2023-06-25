@@ -1,0 +1,9 @@
+- name: Configure Lemmy
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Remove DB
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: lemmy
+        state: absent
