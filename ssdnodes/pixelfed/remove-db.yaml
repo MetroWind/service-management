@@ -1,0 +1,20 @@
+- name: Reset Pixelfed DB
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Ensure psycopg2 is installed
+      community.general.pacman:
+        name: python-psycopg2
+        state: present
+
+    - name: Remove DB
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: pixelfed
+        state: absent
+
+    - name: Remove DB user
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: pixelfed
+        state: absent
