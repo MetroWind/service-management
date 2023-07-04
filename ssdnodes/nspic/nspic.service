@@ -1,0 +1,15 @@
+[Unit]
+Description=NSPic server
+After=network.target
+
+[Service]
+Type=exec
+Environment="RUST_LOG=nspic=info"
+ExecStart=/usr/local/bin/nspic
+WorkingDirectory=/var/lib/nspic
+User=nspic
+Group=nspic
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

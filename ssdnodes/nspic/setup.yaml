@@ -1,0 +1,100 @@
+- name: Deploy NSPic
+  hosts: ssh.mws.rocks
+  become: yes
+  vars_prompt:
+    - name: upload_password
+      prompt: Password required for image upload
+  tasks:
+    - name: Download release
+      ansible.builtin.unarchive:
+        src: "https://github.com/MetroWind/nspic/releases/latest/download/nspic-linux-amd64.tar.zstd"
+        dest: /tmp
+        remote_src: yes
+
+    - name: Move binary to PATH
+      ansible.builtin.command:
+        cmd: mv /tmp/nspic/target/release/nspic /usr/local/bin/nspic
+
+    - name: Copy user definition
+      ansible.builtin.copy:
+        src: nspic.sysusers
+        dest: /etc/sysusers.d/nspic.conf
+
+    - name: Create user
+      ansible.builtin.command: systemd-sysusers
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.toml
+        dest: /etc/nspic.toml
+        group: nspic
+        owner: nspic
+        mode: 0600
+
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: nspic.service
+        dest: /etc/systemd/system/
+        mode: 0644
+
+    - name: Create working dir
+      ansible.builtin.file:
+        path: /var/lib/nspic
+        state: directory
+        mode: '0755'
+        owner: nspic
+        group: nspic
+
+    - name: Create image dir
+      ansible.builtin.file:
+        path: /var/lib/nspic/images
+        state: directory
+        mode: '0755'
+        owner: nspic
+        group: nspic
+
+    - name: Copy templates
+      ansible.builtin.copy:
+        remote_src: true
+        src: "/tmp/nspic/templates"
+        dest: "/var/lib/nspic"
+        group: nspic
+        owner: nspic
+
+    - name: Copy statics
+      ansible.builtin.copy:
+        remote_src: true
+        src: "/tmp/nspic/static"
+        dest: "/var/lib/nspic"
+        group: nspic
+        owner: nspic
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/nspic.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/nspic\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/nspic.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: nspic
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Remove source code
+      ansible.builtin.file:
+        path: /tmp/nspic
+        state: absent
