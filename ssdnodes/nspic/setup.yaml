@@ -56,7 +56,7 @@
     - name: Copy templates
       ansible.builtin.copy:
         remote_src: true
-        src: "/tmp/nspic/templates"
+        src: "/tmp/nspic/nspic/templates"
         dest: "/var/lib/nspic"
         group: nspic
         owner: nspic
@@ -64,7 +64,7 @@
     - name: Copy statics
       ansible.builtin.copy:
         remote_src: true
-        src: "/tmp/nspic/static"
+        src: "/tmp/nspic/nspic/static"
         dest: "/var/lib/nspic"
         group: nspic
         owner: nspic
