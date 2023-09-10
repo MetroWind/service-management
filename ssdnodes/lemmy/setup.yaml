@@ -57,7 +57,7 @@
   hosts: ssh.mws.rocks
   become: yes
   vars:
-    version: "0.18.0"
+    version: "0.18.1"
   tasks:
     - name: Install build and runtime dependencies
       community.general.pacman:
@@ -101,7 +101,7 @@
 
     - name: Build Lemmy
       ansible.builtin.shell:
-        cmd: "cargo build --release --frozen"
+        cmd: "cargo build --release"
         chdir: "/home/mw/programs/lemmy-{{ version }}"
         creates: "/home/mw/programs/lemmy-{{ version }}/target/release/lemmy_server"
 
