@@ -1,0 +1,26 @@
+- name: Setup huginn DB
+  hosts: brighid.xeno
+  become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+  tasks:
+    - set_fact:
+        db_password: "{{ db_password }}"
+
+    # Setup DB
+    - name: Ensure psycopg2 is installed
+      community.general.pacman:
+        name: python-psycopg2
+        state: present
+
+    - name: Ensure DB user exist
+      community.postgresql.postgresql_user:
+        name: huginn
+        password: "{{ db_password }}"
+        role_attr_flags: CREATEDB
+
+    - name: Create a DB
+      community.postgresql.postgresql_db:
+        name: huginn
+        owner: huginn

@@ -1,0 +1,17 @@
+- name: Reset Huginn DB
+  hosts: brighid.xeno
+  tasks:
+    - name: Ensure psycopg2 is installed
+      community.general.pacman:
+        name: python-psycopg2
+        state: present
+
+    - name: Remove DB
+      community.postgresql.postgresql_db:
+        name: huginn
+        state: absent
+
+    - name: Remove DB user
+      community.postgresql.postgresql_user:
+        name: huginn
+        state: absent
