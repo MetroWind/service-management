@@ -1,0 +1,51 @@
+---
+- name: Setup Huginn DB
+  ansible.builtin.import_playbook: init-db.yaml
+
+- name: Install Huginn
+  hosts: perdido.xeno
+  become: yes
+  vars:
+    db_password: "{{ hostvars['brighid.xeno']['db_password'] }}"
+  tasks:
+    - name: Ensure docker and its python API is installed
+      community.general.pacman:
+        name:
+          - docker
+          - python-packaging
+          - python-docker
+        state: latest
+    - name: Make sure docker is enabled and running
+      ansible.builtin.systemd:
+        state: started
+        enabled: yes
+        name: docker
+
+    - name: Pull docker image
+      community.docker.docker_image:
+        name: ghcr.io/huginn/huginn
+        source: pull
+
+    - name: Copy env file to remote
+      ansible.builtin.template:
+        src: huginn.env
+        dest: /etc/huginn.env
+        owner: root
+        group: wheel
+        mode: '600'
+
+    - name: Copy service file to remote
+      ansible.builtin.copy:
+        src: docker.huginn.service
+        dest: /etc/systemd/system/docker.huginn.service
+        owner: root
+        group: wheel
+        mode: '644'
+
+    # Start service
+    - name: Restart huginn
+      ansible.builtin.systemd:
+        state: restarted
+        enabled: yes
+        name: docker.huginn
+        daemon_reload: yes
