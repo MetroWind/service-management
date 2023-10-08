@@ -1,0 +1,24 @@
+- name: Get home page files
+  hosts: localhost
+  tasks:
+    - name: Download source
+      ansible.builtin.git:
+        repo: https://git.xeno.darksair.org/MetroWind/webdash.git
+        dest: /tmp/webdash
+
+- name: Deploy home page
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy home page to remote
+      ansible.builtin.copy:
+        src: "/tmp/webdash/"
+        dest: /srv/http/
+
+- name: Remove home page files
+  hosts: localhost
+  tasks:
+    - name: Remove source
+      ansible.builtin.file:
+        path: /tmp/webdash
+        state: absent
