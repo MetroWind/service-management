@@ -49,3 +49,25 @@
         enabled: yes
         name: docker.huginn
         daemon_reload: yes
+
+- name: Setup HTTP proxy
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd-vhost-huginn.conf
+        dest: /etc/httpd/conf/extra/huginn.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/huginn\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/huginn.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
