@@ -6,10 +6,12 @@ listen_port = 34740
 password = "{{ upload_password }}"
 image_pixel_size = 1280
 thumb_pixel_size = 256
-image_encoding = "Jpeg"
-image_encoding_quality = 90
+image_encoding = "Avif"
+image_encoding_quality = 80
+webhook_url = "{{ webhook_url }}"
 
 [site_info]
 site_title = "MetroWind’s Pictures"
 footnote = "All contents are under CC BY 4.0 (Attribution 4.0 International)."
 url_domain = "http://photos.mws.rocks"
+username = "MetroWind"

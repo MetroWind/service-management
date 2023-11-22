@@ -4,6 +4,9 @@
   vars_prompt:
     - name: upload_password
       prompt: Password required for image upload
+    - name: webhook_url
+      prompt: Webhook URL
+      private: false
   tasks:
     - name: Download release
       ansible.builtin.unarchive:
