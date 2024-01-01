@@ -53,10 +53,6 @@
       ansible.builtin.command:
         cmd: "pacman -U --noconfirm /tmp/{{ package_file }}"
 
-    - name: Install ffmpeg
-      ansible.builtin.command:
-        cmd: "pacman -Sy --noconfirm --needed --asdeps ffmpeg"
-
     - name: Copy config
       ansible.builtin.copy:
         src: nsgallery.yaml

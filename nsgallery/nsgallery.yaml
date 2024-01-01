@@ -1,4 +1,7 @@
 listen-address: "0.0.0.0"
+url-prefix: "https://gallery.xeno.darksair.org"
 photo-root-dir: "/mnt/pictures"
 template-dir: "/var/lib/nsgallery/templates"
 static-dir: "/var/lib/nsgallery/statics"
+exiftool-path: "/usr/bin/vendor_perl/exiftool"
+imagemagick-mem-limit-mib: 2048
