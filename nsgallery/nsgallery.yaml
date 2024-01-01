@@ -1,0 +1,4 @@
+listen-address: "0.0.0.0"
+photo-root-dir: "/mnt/pictures"
+template-dir: "/var/lib/nsgallery/templates"
+static-dir: "/var/lib/nsgallery/statics"
