@@ -1,0 +1,126 @@
+# Enabled multilib first!
+# https://wiki.archlinux.org/title/Official_repositories#Enabling_multilib
+
+# Also right the PKGBUILD in AUR doesn’t work.
+# https://aur.archlinux.org/packages/palworld-server. Palworld seems
+# to expects a 64-bit steamclient.so, while the steamcmd in AUR is
+# 32-bit.
+
+- name: Build steamcmd
+  hosts: ssh.mws.rocks
+  tasks:
+    - name: Creates source directory
+      ansible.builtin.file:
+        path: /home/mw/programs/steamcmd
+        state: directory
+
+    - name: Download source
+      ansible.builtin.unarchive:
+        remote_src: yes
+        src: https://aur.archlinux.org/cgit/aur.git/snapshot/steamcmd.tar.gz
+        dest: /home/mw/programs/steamcmd
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "/home/mw/programs/steamcmd/steamcmd"
+        creates: "/home/mw/programs/steamcmd/steamcmd/steamcmd-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 steamcmd-*-x86_64.pkg.tar.zst"
+        chdir: "/home/mw/programs/steamcmd/steamcmd"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+- name: Install steamcmd
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    package_file: "{{ hostvars['ssh.mws.rocks']['package_file'] }}"
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: "/home/mw/programs/steamcmd/steamcmd/{{ package_file }}"
+        state: present
+
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "/home/mw/programs/steamcmd"
+        state: absent
+
+- name: Build server
+  hosts: ssh.mws.rocks
+  tasks:
+    - name: Creates source directory
+      ansible.builtin.file:
+        path: /home/mw/programs/palworld
+        state: directory
+
+    - name: Download source
+      ansible.builtin.unarchive:
+        remote_src: yes
+        src: https://aur.archlinux.org/cgit/aur.git/snapshot/palworld-server.tar.gz
+        dest: /home/mw/programs/palworld
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "/home/mw/programs/palworld/palworld-server"
+        creates: "/home/mw/programs/palworld/palworld-server/palworld-server-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 palworld-server-*-x86_64.pkg.tar.zst"
+        chdir: "/home/mw/programs/palworld/palworld-server"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+- name: Deploy server
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    package_file: "{{ hostvars['ssh.mws.rocks']['package_file'] }}"
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: "/home/mw/programs/palworld/palworld-server/{{ package_file }}"
+        state: present
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: server.conf
+        dest: /etc/palworld/server.conf
+        owner: palworld
+        group: palworld
+        mode: 0644
+
+    - name: Copy world config
+      ansible.builtin.copy:
+        src: PalWorldSettings.ini
+        dest: /opt/palworld-server/Pal/Saved/Config/LinuxServer/PalWorldSettings.ini
+        owner: palworld
+        group: palworld
+        mode: 0644
+
+    - name: Make sure server is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: palworld-server
+        enabled: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "/home/mw/programs/palworld"
+        state: absent
