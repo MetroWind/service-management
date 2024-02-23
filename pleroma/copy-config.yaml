@@ -1,0 +1,16 @@
+- name: Deploy Pleroma
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy config
+      ansible.builtin.copy:
+        src: config.exs
+        dest: /etc/pleroma/config.exs
+        group: pleroma
+        owner: pleroma
+        mode: 0600
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: pleroma
+        enabled: yes
