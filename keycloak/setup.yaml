@@ -1,0 +1,73 @@
+- name: Deploy Stash
+  hosts: brighid.xeno
+  become: yes
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name:
+          - keycloak
+        state: present
+
+    - name: Ensure DB user exist
+      community.postgresql.postgresql_user:
+        name: keycloak
+        password: "{{ db_password }}"
+
+    - name: Ensure DB exist
+      community.postgresql.postgresql_db:
+        name: keycloak
+        owner: keycloak
+
+    - name: Create service override dir
+      ansible.builtin.file:
+        path: "/etc/systemd/system/keycloak.service.d"
+        state: directory
+        mode: '0755'
+
+    - name: Copy service override file
+      ansible.builtin.template:
+        src: env.conf
+        dest: "/etc/systemd/system/keycloak.service.d/env.conf"
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Create config dir
+      ansible.builtin.file:
+        path: "/etc/keycloak"
+        state: directory
+        mode: '0755'
+
+    - name: Copy config file
+      ansible.builtin.copy:
+        src: keycloak.conf
+        dest: "/etc/keycloak/keycloak.conf"
+        mode: 0644
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/keycloak.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/keycloak\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/keycloak.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Make sure server is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: keycloak
+        enabled: yes
