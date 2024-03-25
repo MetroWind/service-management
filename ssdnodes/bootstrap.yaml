@@ -26,6 +26,7 @@
           - wget
           - nano
           - pkgconf
+          - base-devel
         state: present
 
     - name: Copy mirrorlist

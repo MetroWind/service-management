@@ -1,0 +1,10 @@
+data-dir: "/var/lib/nsweekly"
+listen-address: localhost
+listen-port: 58787
+client-id: nsweekly
+client-secret: "{{ client_secret }}"
+openid-url-prefix: "https://auth.xeno.darksair.org/realms/xeno"
+url-prefix: https://weekly.mws.rocks
+guest-index: "user-weekly"
+guest-index-user: mw
+default-lang: zh-CN

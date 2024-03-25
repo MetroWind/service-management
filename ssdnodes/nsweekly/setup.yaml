@@ -1,0 +1,76 @@
+- name: Build NSWeekly
+  hosts: ssh.mws.rocks
+  tasks:
+    - name: Download source
+      ansible.builtin.git:
+        repo: https://github.com/MetroWind/nsweekly.git
+        dest: /tmp/nsweekly
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "/tmp/nsweekly/packages/arch"
+        creates: "/tmp/nsweekly/packages/arch/nsweekly-git-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 nsweekly-git-*-x86_64.pkg.tar.zst"
+        chdir: "/tmp/nsweekly/packages/arch"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+- name: Build NSWeekly
+  hosts: ssh.mws.rocks
+  become: yes
+  vars_prompt:
+    - name: client_secret
+      prompt: Client secret
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name:
+          - "/tmp/nsweekly/packages/arch/{{ package_file }}"
+        state: present
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/nsweekly.yaml
+        group: nsweekly
+        owner: nsweekly
+        mode: 0600
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/nsweekly.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/nsweekly\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/nsweekly.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: nsweekly
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Remove package dir
+      ansible.builtin.file:
+        path: /tmp/nsweekly
+        state: absent
