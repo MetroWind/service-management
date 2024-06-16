@@ -1,0 +1,133 @@
+- name: Deploy phpBB
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    phpbb_url: "https://download.phpbb.com/pub/release/3.3/3.3.12/phpBB-3.3.12.tar.bz2"
+  tasks:
+    - name: Install dependencies
+      community.general.pacman:
+        name:
+          - sqlite
+          - php
+          - php-gd
+          - php-apache
+          - php-sqlite
+        state: present
+
+    - name: Configure PHP
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';date.timezone =.*'
+        replace: 'date.timezone = America/Los_Angeles'
+
+    - name: Configure PHP sqlite
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';extension=sqlite3'
+        replace: 'extension=sqlite3'
+
+    - name: Configure PHP sqlite PDO
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';extension=pdo_sqlite'
+        replace: 'extension=pdo_sqlite'
+
+    - name: Configure PHP GD
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';extension=gd'
+        replace: 'extension=gd'
+
+    - name: Install phpBB files
+      ansible.builtin.unarchive:
+        src: "{{ phpbb_url }}"
+        dest: /srv/http
+        remote_src: yes
+        owner: http
+        group: http
+
+    - name: Rename phpBB dir
+      ansible.builtin.copy:
+        src: /srv/http/phpBB3/
+        dest: /srv/http/forum/
+        remote_src: yes
+
+    - name: Remove orig phpBB dir
+      ansible.builtin.file:
+        path: /srv/http/phpBB3
+        state: absent
+
+    - name: Create a directory for database
+      ansible.builtin.file:
+        path: /var/lib/phpbb
+        state: directory
+        mode: '0755'
+        owner: http
+        group: http
+
+    - name: Create a directory for attachments
+      ansible.builtin.file:
+        path: /var/lib/phpbb/attachments
+        state: directory
+        mode: '0755'
+        owner: http
+        group: http
+
+    - name: Remove the phpBB orig attachment dir
+      ansible.builtin.file:
+        path: /srv/http/forum/files
+        state: absent
+
+    - name: Link the phpBB attachment dir to the actual attachment dir
+      ansible.builtin.file:
+        src: /var/lib/phpbb/attachments
+        dest: /srv/http/forum/files
+        owner: http
+        group: http
+        state: link
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/forum.conf
+
+    - name: Disable Apache MPM event
+      ansible.builtin.replace:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^LoadModule mpm_event_module modules/mod_mpm_event\.so'
+        replace: '#LoadModule mpm_event_module modules/mod_mpm_event.so'
+
+    - name: Enable Apache MPM prefork module
+      ansible.builtin.replace:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^# ?LoadModule mpm_prefork_module modules/mod_mpm_prefork\.so'
+        replace: 'LoadModule mpm_prefork_module modules/mod_mpm_prefork.so'
+
+    - name: Configure Apache PHP module
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#? ?LoadModule php_module modules/libphp\.so'
+        insertafter: '^#? ?LoadModule .*'
+        line: |
+          LoadModule php_module modules/libphp.so
+          AddHandler php-script .php
+
+    - name: Include Apache PHP config
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/php_module\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/php_module.conf'
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/forum\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/forum.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
