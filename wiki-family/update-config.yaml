@@ -1,0 +1,8 @@
+- name: Update config
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy Wiki config
+      ansible.builtin.copy:
+        src: LocalSettings.php
+        dest: /srv/http-wiki-family/
