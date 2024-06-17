@@ -1,0 +1,140 @@
+- name: Deploy MediaWiki
+  hosts: brighid.xeno
+  become: yes
+  vars:
+    version_full: "1.41.1"
+    version_minor: "1.41"
+  vars_prompt:
+    - name: db_password
+      prompt: Database password
+  tasks:
+    - name: Install dependencies
+      community.general.pacman:
+        name:
+          - php
+          - php-imagick
+          - libheif
+          - php-apache
+          - php-pgsql
+        state: present
+
+    - name: Configure PHP
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';date.timezone =.*'
+        replace: 'date.timezone = America/Los_Angeles'
+
+    - name: Configure PHP postgres
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';extension=pgsql'
+        replace: 'extension=pgsql'
+
+    - name: Enable PHP iconv
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';extension=iconv'
+        replace: 'extension=iconv'
+
+    - name: Enable PHP intl
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: ';extension=intl'
+        replace: 'extension=intl'
+
+    - name: Set PHP upload limit
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: '^;? ?upload_max_filesize = .*'
+        replace: 'upload_max_filesize = 20M'
+
+    - name: Set PHP POST limit
+      ansible.builtin.replace:
+        path: /etc/php/php.ini
+        regexp: '^;? ?post_max_size = .*'
+        replace: 'post_max_size = 20M'
+
+    - name: Install MediaWiki files
+      ansible.builtin.unarchive:
+        src: "https://releases.wikimedia.org/mediawiki/{{ version_minor }}/mediawiki-{{ version_full }}.tar.gz"
+        dest: /srv/
+        remote_src: yes
+
+    - name: Rename wiki dir
+      ansible.builtin.copy:
+        src: "/srv/mediawiki-{{ version_full }}/"
+        dest: /srv/http-wiki-family/
+        remote_src: yes
+
+    - name: Remove orig wiki dir
+      ansible.builtin.file:
+        path: "/srv/mediawiki-{{ version_full }}/"
+        state: absent
+
+    - name: Set owner of wiki dir
+      ansible.builtin.file:
+        path: "/srv/http-wiki-family"
+        state: directory
+        recurse: yes
+        owner: http
+        group: http
+
+    - name: Copy Wiki config
+      ansible.builtin.template:
+        src: LocalSettings.php
+        dest: /srv/http-wiki-family/
+        owner: http
+        group: http
+
+    - name: Copy logo
+      ansible.builtin.copy:
+        src: logo.svg
+        dest: /srv/http-wiki-family/resources/assets/
+        owner: http
+        group: http
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/extra/wiki-family.conf
+
+    - name: Disable Apache MPM event
+      ansible.builtin.replace:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^LoadModule mpm_event_module modules/mod_mpm_event\.so'
+        replace: '#LoadModule mpm_event_module modules/mod_mpm_event.so'
+
+    - name: Enable Apache MPM prefork module
+      ansible.builtin.replace:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^# ?LoadModule mpm_prefork_module modules/mod_mpm_prefork\.so'
+        replace: 'LoadModule mpm_prefork_module modules/mod_mpm_prefork.so'
+
+    - name: Configure Apache PHP module
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#? ?LoadModule php_module modules/libphp\.so'
+        insertafter: '^#? ?LoadModule .*'
+        line: |
+          LoadModule php_module modules/libphp.so
+          AddHandler php-script .php
+
+    - name: Include Apache PHP config
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/php_module\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/php_module.conf'
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/wiki-family\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/wiki-family.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
