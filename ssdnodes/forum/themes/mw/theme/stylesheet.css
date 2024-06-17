@@ -1,0 +1,246 @@
+@import url("../../prosilver/theme/normalize.css");
+@import url("../../prosilver/theme/base.css");
+@import url("../../prosilver/theme/utilities.css");
+@import url("../../prosilver/theme/common.css");
+@import url("../../prosilver/theme/links.css");
+@import url("../../prosilver/theme/content.css");
+@import url("../../prosilver/theme/buttons.css");
+@import url("../../prosilver/theme/cp.css");
+@import url("../../prosilver/theme/colours.css");
+@import url("../../prosilver/theme/forms.css");
+@import url("../../prosilver/theme/icons.css");
+@import url("../../prosilver/theme/responsive.css");
+
+:root
+{
+    --color-fg: #2f3542;
+    --color-bg: white;
+    --color-accent: #5352ed;
+    --color-alt: #2ed573;
+    --color-light: #f1f2f6;
+    --corner-radius: 10px;
+}
+
+*, a.forumtitle, h1, h2, h3, h4, h5, h6, li.header dt, li.header dd,
+.content, .button, .pagination li.active span,
+.dropdown-extended .header, .notification_list p.notifications_title,
+.postbody h3, .content p, dl.faq, p.author, .notice, .attachbox dt,
+dl.file, dl.file dt, dl.thumbnail dd, fieldset.polls, fieldset.polls dd div,
+fieldset, input, select, select optgroup option, textarea, .message-box textarea,
+a.button1, input.button1, input.button3, a.button2, input.button2,
+a.topictitle, h1 a, h2 a, h3 a, .date
+{
+    font-family: unset;
+    box-sizing: border-box;
+}
+
+/* ==========  ===================================================> */
+
+body
+{
+    font-family: Inter, sans-serif;
+    font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
+    font-size: 14px;
+}
+@supports (font-variation-settings: normal)
+{
+    body { font-family: InterVariable, sans-serif; }
+}
+
+html, body
+{
+	color: var(--color-fg);
+	background-color: var(--color-bg);
+}
+
+a
+{
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+a:hover, .post:target h3 a:hover
+{
+    color: var(--color-bg);
+    background-color: var(--color-accent);
+    text-decoration: none;
+}
+
+.row-item .forumtitle:hover, .row-item .topictitle:hover, .row-item .lastsubject:hover,
+.row-item .subforum:hover, .row-item a.username:hover, .row-item a.username-coloured:hover,
+.forumbg .header a:hover, .forabg .header a:hover, th a:hover
+{
+    text-decoration: none;
+}
+
+a.button1, input.button1, input.button3, a.button2, input.button2
+{
+    background: var(--color-accent);
+    padding: 4px 8px;
+    border-radius: calc(var(--corner-radius) * 0.5);
+    color: var(--color-bg);
+}
+
+a.button1:hover, input.button1:hover, input.button3:hover, a.button2:hover, input.button2:hover
+{
+    background: var(--color-light);
+    color: var(--color-accent);
+}
+
+.wrap
+{
+    padding: 0px;
+    border: none;
+    border-radius: unset;
+}
+
+.headerbar
+{
+    background-color: unset;
+    background-image: unset;
+    background-repeat: unset;
+    background: no-repeat 50% 14% /cover url("images/doraemon.svg");
+    border-radius: var(--corner-radius);
+}
+
+.headerbar > .inner
+{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+}
+
+#site-description
+{
+    width: unset;
+}
+
+#site-description a
+{
+    color: white;
+}
+
+#site-description > h1
+{
+    background-color: rgba(0,0,0,0.6);
+    padding: 2px 8px;
+    border-radius: var(--corner-radius);
+    font-weight: normal;
+}
+
+#site-description > h1, #site-description > p
+{
+    margin: 0px;
+}
+
+#site-description > p
+{
+    font-weight: bold;
+    padding: 10px;
+}
+
+.headerbar > .inner > #search-box
+{
+    margin: 0px;
+    height: 100%;
+}
+
+.headerbar > .inner::after
+{
+    clear: unset;
+    content: unset;
+}
+
+.navbar
+{
+    background: none;
+    padding: 0px;
+    margin: 10px 0px;
+}
+
+.navbar ul.linklist
+{
+    padding: 0px;
+}
+
+a.header-avatar img
+{
+    border-radius: calc(var(--corner-radius) * 0.5);
+}
+
+.forabg, .forumbg
+{
+    border-radius: var(--corner-radius);
+    padding: 16px;
+}
+
+.forabg
+{
+    background: linear-gradient(170deg, var(--color-alt) 0%, var(--color-accent) 100%);
+}
+
+.forumbg
+{
+    background: #5352ed;
+}
+
+ul.forums, ul.topics
+{
+    background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    border-radius: var(--corner-radius);
+}
+
+.bg1, .bg2, .bg3
+{
+    background-color: unset;
+}
+
+li.row
+{
+    border: none;
+}
+
+li.row:hover
+{
+    background-color: unset;
+}
+
+.row .list-inner
+{
+    padding: 0px;
+}
+
+dl.row-item
+{
+    display: flex;
+    align-items: center;
+}
+
+ul.topiclist dd
+{
+    border: none;
+}
+
+dl.row-item dt, dl.row-item dd
+{
+    min-height: unset;
+}
+
+.post
+{
+    background-color: var(--color-light);
+    border-radius: var(--corner-radius);
+    padding: 16px;
+    margin: 16px 0px;
+}
+
+.post:target h3 a
+{
+    color: var(--color-fg);
+}
+
+.postprofile .avatar img
+{
+    border-radius: var(--corner-radius);
+}

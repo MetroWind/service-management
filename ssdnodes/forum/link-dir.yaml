@@ -1,0 +1,20 @@
+- name: Create dest directory if nessesary
+  ansible.builtin.file:
+    path: "{{ src_dir }}"
+    state: directory
+    mode: '0755'
+    owner: http
+    group: http
+
+- name: Remove the phpBB orig dir
+  ansible.builtin.file:
+    path: "{{ link }}"
+    state: absent
+
+- name: Link the phpBB dir to the actual dir
+  ansible.builtin.file:
+    src: "{{ src_dir }}"
+    dest: "{{ link }}"
+    owner: http
+    group: http
+    state: link
