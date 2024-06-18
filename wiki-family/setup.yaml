@@ -4,9 +4,6 @@
   vars:
     version_full: "1.41.1"
     version_minor: "1.41"
-  vars_prompt:
-    - name: db_password
-      prompt: Database password
   tasks:
     - name: Install dependencies
       community.general.pacman:
@@ -80,7 +77,7 @@
         group: http
 
     - name: Copy Wiki config
-      ansible.builtin.template:
+      ansible.builtin.copy:
         src: LocalSettings.php
         dest: /srv/http-wiki-family/
         owner: http
