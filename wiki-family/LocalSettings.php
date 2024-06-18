@@ -152,3 +152,13 @@ $wgMaxUploadSize = 20971520;
 $wgGroupPermissions['*']['read'] = false;
 $wgGroupPermissions['*']['edit'] = false;
 $wgGroupPermissions['*']['createaccount'] = false;
+
+$wgImageLimits = [
+  [ 240, 240 ],
+];
+$wgThumbLimits = [
+	120,
+	150,
+];
+$wgDefaultUserOptions['imagesize'] = 0;
+$wgDefaultUserOptions['thumbsize'] = 1;
