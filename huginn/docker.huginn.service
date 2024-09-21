@@ -6,6 +6,7 @@ Requires=docker.service
 [Service]
 TimeoutStartSec=0
 Restart=always
+RuntimeMaxSec=2d
 ExecStartPre=-/usr/bin/docker kill huginn
 ExecStartPre=-/usr/bin/docker rm huginn
 ExecStart=/usr/bin/docker run --rm --name huginn --env-file /etc/huginn.env -p 3000:3000 ghcr.io/huginn/huginn
