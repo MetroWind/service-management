@@ -15,7 +15,7 @@
     - name: What package did I build?
       register: package_file_proc
       ansible.builtin.shell:
-        cmd: "ls -1 nsgallery-git-*-x86_64.pkg.tar.zst"
+        cmd: "ls -1 nsgallery-git-*-x86_64.pkg.tar.zst | fgrep -v debug"
         chdir: "~/pkgs/nsgallery/packages/arch"
 
     - set_fact:
