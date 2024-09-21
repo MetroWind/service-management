@@ -1,0 +1,124 @@
+- name: Build Docspell
+  hosts: amalthus.xeno
+  tasks:
+    - name: Download PKGBUILD
+      ansible.builtin.unarchive:
+        src: "https://aur.archlinux.org/cgit/aur.git/snapshot/docspell.tar.gz"
+        dest: "~/pkgs"
+        remote_src: yes
+    - name: Install build dependency
+      become: yes
+      community.general.pacman:
+        name: debugedit
+        state: present
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/docspell"
+        creates: "~/pkgs/docspell/docspell-*-any.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 docspell-*-any.pkg.tar.zst"
+        chdir: "~/pkgs/docspell"
+
+    - set_fact:
+        package_files: "{{ package_file_proc.stdout | split('\n') }}"
+
+    - debug:
+        msg: "Built package {{ package_files }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/docspell/{{ item }}"
+        dest: /tmp/
+        flat: yes
+      loop: "{{ package_files }}"
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "~/pkgs/docspell"
+        state: absent
+
+- name: Deploy Docspell
+  hosts: adenine.xeno
+  become: yes
+  vars:
+    package_files: "{{ hostvars['amalthus.xeno']['package_files'] }}"
+  vars_prompt:
+    - name: client_secret
+      prompt: Client secret
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ item }}"
+        dest: /tmp/
+      loop: "{{ package_files }}"
+
+    - name: Install dependencies
+      community.general.pacman:
+        name:
+          - ghostscript
+          - jre21-openjdk-headless
+          - tesseract
+          - tesseract-data-eng
+          - unoconv
+          - python-weasyprint
+          - unpaper
+        state: present
+        reason: dependency
+    - name: Install docspell
+      community.general.pacman:
+        name: "{{ ['/tmp/'] | product(package_files) | map('join') | list }}"
+        state: present
+
+    - name: Remove package files
+      ansible.builtin.file:
+        path: "/tmp/{{ item }}"
+        state: absent
+      loop: "{{ package_files }}"
+
+    - name: Copy joex config
+      ansible.builtin.copy:
+        src: joex.conf
+        dest: /etc/docspell/joex.conf
+
+    - name: Copy restserver config
+      ansible.builtin.template:
+        src: restserver.conf
+        dest: /etc/docspell/restserver.conf
+
+    - name: Make sure data server is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: docspell-joex
+        enabled: yes
+
+    - name: Make sure web server is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: docspell-restserver
+        enabled: yes
+
+- name: Setup proxy
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/docspell.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/docspell\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/docspell.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
