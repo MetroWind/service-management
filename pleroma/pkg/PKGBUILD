@@ -3,13 +3,13 @@
 # Contributor: Faye Jackson <justalittleepsilon ant gmail dot com>
 
 pkgname=pleroma-bin
-pkgver=2.6.1
+pkgver=2.7.0
 pkgrel=1
 pkgdesc='A microblogging server software that can federate (= exchange messages with) other servers that support ActivityPub.'
 url='https://pleroma.social/'
 license=('AGPL' 'CCPL:cc-by-4.0' 'CCPL:cc-by-sa-4.0')
 arch=(x86_64 aarch64 armv7h)
-depends=(ncurses file libxcrypt-compat openssl-1.1)
+depends=(ncurses file libxcrypt-compat openssl-1.1 libvips)
 optdepends=('postgresql: local postgresql database support'
             'imagemagick: Pleroma.Upload.Filters.Mogrify, Pleroma.Upload.Filters.Mogrifun support'
             'ffmpeg: media preview proxy support for videos'
@@ -18,9 +18,12 @@ provides=(pleroma)
 conflicts=(pleroma)
 backup=('etc/pleroma/config.exs')
 install=pleroma.install
-source_x86_64=("pleroma-x86_64-${pkgver}.zip::https://git.pleroma.social/pleroma/pleroma/-/jobs/247856/artifacts/download")
-source_aarch64=("pleroma-aarch64-${pkgver}.zip::https://git.pleroma.social/pleroma/pleroma/-/jobs/247860/artifacts/download")
-source_armv7h=("pleroma-armv7h-${pkgver}.zip::https://git.pleroma.social/pleroma/pleroma/-/jobs/247858/artifacts/download")
+# How to find these URLs: go to repo, switch to the release tag, click
+# into the commit, go to the “Pipelines” tab, choose one of the merges
+# (if there are more than one), and click download at the right.
+source_x86_64=("pleroma-x86_64-${pkgver}.zip::https://git.pleroma.social/pleroma/pleroma/-/jobs/272738/artifacts/download")
+source_aarch64=("pleroma-aarch64-${pkgver}.zip::https://git.pleroma.social/pleroma/pleroma/-/jobs/272742/artifacts/download")
+source_armv7h=("pleroma-armv7h-${pkgver}.zip::https://git.pleroma.social/pleroma/pleroma/-/jobs/272740/artifacts/download")
 source=('pleroma.sysusers'
         'pleroma.tmpfiles'
         'pleroma.service'
@@ -29,9 +32,9 @@ sha256sums=('4df8a0099dada9bf652fb07677a9c6a66cad1f26498f08a55d8acb0186b78979'
             'b5e844fab22dc4fafdec09c1f14437a06d3a12fae753fc0be968d22eaddfd6dc'
             '268952ef036ef65ab146a38ff20bbba35759c0f33510fe6ca15d6765285938ed'
             'e299229268576c559d0155baccccf682c97b51bebab40a0b7ff3ab562ec62104')
-sha256sums_x86_64=('8859f25a122b1910d7acf56af9295b3e067dbbbdafaf1a30456b2a8a205253ed')
-sha256sums_aarch64=('7e8ab6cb6edb2706f7c536d4a980cca4514c8d223702bd3e8826a84ff9d5e1bd')
-sha256sums_armv7h=('f1a013ea4fc05e39867e8ba9322c73740e1283e2ac54c6b50048131a99a1a5c8')
+sha256sums_x86_64=('451435dc2cc48b21a62cce1c0532f4746ee7b07e0bb2b40dca9210cea3fa0c17')
+sha256sums_aarch64=('8cf12cee96adf9e64a60443109ed113a95ab7d3406eec5b18661a0d8d63abffb')
+sha256sums_armv7h=('22da30dec93437e3ecb33270a9377bd8d8965554c2761af81e2268e11633ea56')
 
 package() {
     cd "$srcdir"

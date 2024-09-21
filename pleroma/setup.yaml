@@ -1,3 +1,12 @@
+# Usage:
+#
+#   make setup
+#
+# After setup, ssh into the machine, and
+#
+#  $ cd /opt/pleroma/
+#  $ sudo -u pleroma ./bin/pleroma_ctl migrate
+
 - name: Build package
   hosts: amalthus.xeno
   vars:
@@ -18,7 +27,7 @@
     - name: What package did I build?
       register: package_file_proc
       ansible.builtin.shell:
-        cmd: "ls -1 {{ pkg }}-*-x86_64.pkg.tar.zst"
+        cmd: "ls -1 {{ pkg }}-*-x86_64.pkg.tar.zst | head -n1"
         chdir: /home/user/pkgs/{{ pkg }}
 
     - set_fact:
