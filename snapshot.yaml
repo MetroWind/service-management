@@ -1,0 +1,15 @@
+---
+- name: All hosts up-to-date
+  hosts: localhost
+  vars_prompt:
+    - name: password
+      prompt: Proxmox root password
+  tasks:
+    - name: Create new container snapshot
+      community.general.proxmox_snap:
+        api_user: root@pam
+        api_password: "{{ password }}"
+        api_host: xeno.xeno
+        vmid: 108
+        state: present
+        snapname: pre-updates
