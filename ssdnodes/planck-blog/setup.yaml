@@ -1,0 +1,127 @@
+- name: Build Planck
+  hosts: amalthus.xeno
+  tasks:
+    - name: Download source
+      ansible.builtin.git:
+        repo: https://github.com/MetroWind/planck-blog.git
+        dest: ~/pkgs/planck
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/planck/packages/arch"
+        creates: "~/pkgs/planck/packages/arch/planck-blog-git-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 planck-blog-git-*-x86_64.pkg.tar.zst | fgrep -v debug"
+        chdir: "~/pkgs/planck/packages/arch"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/planck/packages/arch/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: ~/pkgs/planck
+        state: absent
+
+- name: Build Planck
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+    iosevka_version: "31.7.1"
+  vars_prompt:
+    - name: client_secret
+      prompt: Client secret
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    - name: Install package
+      community.general.pacman:
+        name:
+          - "/tmp/{{ package_file }}"
+        state: present
+
+    - name: Create directory for monospace font
+      ansible.builtin.file:
+        path: /var/lib/planck-blog/statics/fonts/iosevka
+        state: directory
+        recurse: yes
+        owner: planck
+        group: planck
+
+    - name: Download monospace font
+      ansible.builtin.unarchive:
+        src: "https://github.com/be5invis/Iosevka/releases/download/v{{ iosevka_version }}/PkgWebFont-IosevkaSS10-{{ iosevka_version }}.zip"
+        dest: /var/lib/planck-blog/statics/fonts/iosevka
+        remote_src: yes
+        owner: planck
+        group: planck
+
+    - name: Create directory for text font
+      ansible.builtin.file:
+        path: /var/lib/planck-blog/statics/fonts/iosevka-etoile
+        state: directory
+        recurse: yes
+        owner: planck
+        group: planck
+
+    - name: Download text font
+      ansible.builtin.unarchive:
+        src: "https://github.com/be5invis/Iosevka/releases/download/v{{ iosevka_version }}/PkgWebFont-IosevkaEtoile-{{ iosevka_version }}.zip"
+        dest: /var/lib/planck-blog/statics/fonts/iosevka-etoile
+        remote_src: yes
+        owner: planck
+        group: planck
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/planck-blog.yaml
+        group: planck
+        owner: planck
+        mode: 0600
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/planck-blog.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/planck-blog\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/planck-blog.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: planck-blog
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/{{ package_file }}"
+        state: absent
