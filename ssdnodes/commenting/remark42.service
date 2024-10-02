@@ -1,0 +1,36 @@
+[Unit]
+Description=Remark42 service
+After=network.target
+
+[Service]
+Type=simple
+User=remark42
+Group=remark42
+Environment="STORE_BOLT_PATH=/var/lib/remark42"
+Environment="ADMIN_SHARED_ID=github_dc348a0becf0b0d0928f59e6e1ccc925ba91ff34"
+Environment="AUTH_ANON=true"
+Environment="AUTH_GITHUB_CID=Ov23liWs5dYac3RAeppT"
+Environment="AUTH_GITHUB_CSEC={{ github_client_secret }}"
+Environment="SITE=blog"
+Environment="AVATAR_TYPE=bolt"
+Environment="AVATAR_BOLT_FILE=/var/lib/remark42/avatars.db"
+Environment="AVATAR_RESIZE=128"
+Environment="IMAGE_TYPE=bolt"
+Environment="IMAGE_BOLT_FILE=/var/lib/remark42/images.db"
+Environment="IMAGE_MAX_SIZE=2097152"
+Environment="IMAGE_RESIZE_WIDTH=1024"
+Environment="IMAGE_RESIZE_HEIGHT=1024"
+Environment="REMARK_URL=https://comments.mws.rocks"
+# I don't have to save this secret. It's fine if this changes. It just
+# invalidates all the session. See
+# https://github.com/umputun/remark42/discussions/861#discussioncomment-305075
+Environment="SECRET={{ secret }}"
+Environment="REMARK_ADDRESS=127.0.0.1"
+Environment="REMARK_PORT=38516"
+Environment="REMARK_WEB_ROOT=/var/lib/remark42/web"
+WorkingDirectory=/var/lib/remark42
+ExecStart=/usr/local/bin/remark42 server
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
