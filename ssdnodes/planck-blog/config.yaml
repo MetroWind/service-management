@@ -10,7 +10,7 @@ languages:
   - zh-CN
   - en-US
 blog-title: Sky Watch
-default-theme: planck-light
+default-theme: planck-light-columns
 substitutions:
   nav-center: |
     <ul style="list-style: none; text-align: center; display: flex; align-items: center; gap: 24px;">
