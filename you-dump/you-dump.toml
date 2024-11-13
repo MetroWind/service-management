@@ -1,4 +1,4 @@
-download_dir = "/mnt/downloads/you-dump"
+download_dir = "/mnt/stuff/downloads/you-dump"
 ydl_exec = "yt-dlp"
 static_dir = "/var/lib/you-dump/static"
 listen_address = "0.0.0.0"

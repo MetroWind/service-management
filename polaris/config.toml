@@ -4,7 +4,7 @@ album_art_pattern = '(cover|folder)\.(png|jpe?g)$'
 
 [[mount_dirs]]
 name = 'music'
-source = '/mnt/music-lossy-copy'
+source = '/mnt/stuff/music-lossy-copy'
 
 # [[mount_dirs]]
 # name = 'other'
