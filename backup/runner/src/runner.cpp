@@ -134,10 +134,10 @@ E<BackupSpec> BackupSpec::fromYaml(c4::yml::ConstNodeRef yaml_node)
         spec.source = std::move(out);
     }
 
-    if(source_node["rustic-profile"].readable())
+    if(yaml_node["rustic-profile"].readable())
     {
         std::string profile;
-        source_node["rustic-profile"] >> profile;
+        yaml_node["rustic-profile"] >> profile;
         spec.rustic_profile = std::move(profile);
     }
 
