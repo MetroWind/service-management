@@ -38,7 +38,7 @@ E<void> doBackup(const std::string& path,
                  const std::optional<std::string>& profile,
                  bool dry_run)
 {
-    std::vector<const char*> argv = {"rustic",};
+    std::vector<const char*> argv = {"rustic", "backup"};
     if(dry_run)
     {
         argv.push_back("--dry-run");
@@ -71,7 +71,7 @@ E<void> doBackup(const StdoutBackup& stdout_spec,
         additional_rustic_opts += *profile;
     }
     std::string command = std::format(
-        "set -euo pipefail; {} | rustic --stdin-filename {} {} -",
+        "set -euo pipefail; {} | rustic backup --stdin-filename {} {} -",
         stdout_spec.command, stdout_spec.filename, additional_rustic_opts);
 
     if(dry_run)
