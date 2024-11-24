@@ -1,0 +1,121 @@
+- name: Build DoL
+  hosts: localhost
+  tasks:
+    - name: Create directory for DoL
+      ansible.builtin.file:
+        path: /tmp/dol
+        state: directory
+        recurse: yes
+
+    - name: Download DoL
+      ansible.builtin.git:
+        repo: "https://gitgud.io/Vrelnir/degrees-of-lewdity.git"
+        dest: /tmp/dol
+
+    - name: Remove .git dir
+      ansible.builtin.file:
+        path: /tmp/dol/.git
+        state: absent
+
+    - name: Compile DoL
+      ansible.builtin.command:
+        cmd: "./compile.sh"
+        chdir: /tmp/dol
+        creates: "/tmp/dol/Degrees of Lewdity.html"
+
+    - name: Remove devtool dir
+      ansible.builtin.file:
+        path: /tmp/dol/devTools
+        state: absent
+
+    - name: Compress DoL directory
+      community.general.archive:
+        path: /tmp/dol
+        dest: /tmp/dol.tar.gz
+        remove: yes
+
+- name: Setup server
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Download DoL server
+      ansible.builtin.get_url:
+        url: "https://github.com/MetroWind/dol-server/releases/latest/download/dol-server.zst"
+        dest: /usr/local/bin/dol-server.zst
+
+    - name: Uncompress DoL server binary
+      ansible.builtin.command:
+        cmd: unzstd -f --rm /usr/local/bin/dol-server.zst
+        creates: /usr/local/bin/dol-server
+
+    - name: Set file mode
+      ansible.builtin.file:
+        path: /usr/local/bin/dol-server
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create directory for DoL server
+      ansible.builtin.file:
+        path: /var/lib/dol-server
+        state: directory
+        recurse: yes
+
+    - name: Copy DoL
+      ansible.builtin.unarchive:
+        src: /tmp/dol.tar.gz
+        dest: /var/lib/dol-server/
+        remote_src: no
+
+    - name: Copy Config
+      ansible.builtin.copy:
+        src: config.yaml
+        dest: /etc/dol-server.yaml
+
+    - name: Make sure sysusers directory exists
+      ansible.builtin.file:
+        path: /etc/sysusers.d
+        state: directory
+        recurse: yes
+
+    - name: Copy sysusers file
+      ansible.builtin.copy:
+        src: sysusers-dol-server.conf
+        dest: /etc/sysusers.d/dol-server.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Ensure user
+      ansible.builtin.systemd:
+        state: restarted
+        name: systemd-sysusers
+
+    - name: Set owner of DoL server dir
+      ansible.builtin.file:
+        path: /var/lib/dol-server
+        owner: dolserver
+        group: dolserver
+        recurse: yes
+
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: dol-server.service
+        dest: /etc/systemd/system/dol-server.service
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Make sure server is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: dol-server.service
+        enabled: yes
+
+- name: Build DoL
+  hosts: localhost
+  tasks:
+    - name: Remove local DoL
+      ansible.builtin.file:
+        path: /tmp/dol.tar.gz
+        state: absent

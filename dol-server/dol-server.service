@@ -1,0 +1,12 @@
+[Unit]
+Description=DoL service
+After=network.target
+
+[Service]
+User=dolserver
+Group=dolserver
+ExecStart=/usr/local/bin/dol-server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

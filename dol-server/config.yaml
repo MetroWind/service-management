@@ -1,0 +1,5 @@
+listen-address: 0.0.0.0
+listen-port: 44775
+base-url: "http://brighid.xeno:44775/"
+data-dir: /var/lib/dol-server
+dol-dir: /var/lib/dol-server/dol
