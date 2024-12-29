@@ -3,7 +3,7 @@
 - name: Build package
   hosts: amalthus.xeno
   vars:
-    package: trilium-server-bin
+    package: trilium-next-server-bin
   tasks:
     - name: Copy PKGBUILD files
       ansible.builtin.copy:
@@ -83,12 +83,6 @@
         regexp: '^#Include\s+conf/extra/trilium\.conf'
         insertafter: "Probably not exists"
         line: 'Include conf/extra/trilium.conf'
-
-    - name: Make sure server is running and enabled
-      ansible.builtin.systemd:
-        state: restarted
-        name: keycloak
-        enabled: yes
 
     - name: Restart Apache
       ansible.builtin.systemd:

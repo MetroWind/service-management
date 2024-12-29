@@ -1,17 +1,18 @@
-pkgname="trilium-server-bin"
-pkgver=0.63.7
-pkgrel=4
+pkgname="trilium-next-server-bin"
+pkgver=0.90.12
+pkgrel=1
 pkgdesc="A hierarchical note taking application built on modern technologies (server only)."
 depends=('libxss' 'nss')
 arch=('x86_64')
-url="https://github.com/zadam/trilium"
+url="https://github.com/TriliumNext/Notes"
 license=('AGPL3')
-source=("https://github.com/zadam/trilium/releases/download/v$pkgver/trilium-linux-x64-server-$pkgver.tar.xz"
+replaces=('trilium-server-bin')
+source=("https://github.com/TriliumNext/Notes/releases/download/v$pkgver/TriliumNextNotes-v$pkgver-server-linux-x64.tar.xz"
         "trilium.sysusers"
         "trilium.tmpfiles"
         "trilium.service")
 OPTIONS=(!strip)
-sha512sums=('45db70636066afc2be39acf7e7f969bbc0648f1f5077bb87a375c3b56c1593ceb797b5d1a5a20c57c236f526196a2e641a3be819c56da9b214ed50bc52e42b12'
+sha512sums=('9c68de5ed2eed6bf1be8cc81ea1d6e6d7a9032e30cee0892f85500abced08c130546635645f394eccb81b9a133cacf8c7441de3ca951cba54cb15b42fcdac07d'
             'c08e90544f303cf40d6655c2b332db3dac5d7eeccda5fba878bf4d21a89113ddff9574f16eeb3213bcd24fe8d40826c1d46a6c35f0cbc047ddc6da36c6f6585d'
             'ef6a134d0545de59b5e87d1d3cad4e3b3f7225f0616cd8f0db93338fe543838ea1eef89bb9b2292496c1f174b900708610746aa98f5c2a54b98a112e6d453b16'
             '172c891f2fd96db5b1d80d3ebf9a687f2905d620a0e1b40d6fabb9810b47edb3baf724fc9c11e7c831db1c5ab64002a0833b1aa880489732737eef364a81431d')
@@ -19,9 +20,9 @@ sha512sums=('45db70636066afc2be39acf7e7f969bbc0648f1f5077bb87a375c3b56c1593ceb79
 package()
 {
     # Make folders for extraction
-    mkdir -p "$pkgdir/opt/${pkgname%-bin}"
+    mkdir -p "$pkgdir/opt/trilium-server"
     # Move main files
-    mv trilium-linux-x64-server/* "$pkgdir/opt/${pkgname%-bin}"
+    mv trilium-linux-x64-server/* "$pkgdir/opt/trilium-server"
     # Create command and make it executable
 
     install -Dm 644 trilium.sysusers "${pkgdir}/usr/lib/sysusers.d/trilium.conf"
