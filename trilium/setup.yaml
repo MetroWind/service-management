@@ -1,0 +1,103 @@
+# It seems the initial setup process has to be done without proxy.
+
+- name: Build package
+  hosts: amalthus.xeno
+  vars:
+    package: trilium-server-bin
+  tasks:
+    - name: Copy PKGBUILD files
+      ansible.builtin.copy:
+        src: pkg/
+        dest: "/home/user/pkgs/{{ package }}"
+        mode: '0644'
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: "makepkg -sr --noconfirm -f"
+        chdir: "/home/user/pkgs/{{ package }}"
+        creates: "/home/user/pkgs/{{ package }}/{{ package }}-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 {{ package }}-*-x86_64.pkg.tar.zst"
+        chdir: "/home/user/pkgs/{{ package }}"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "/home/user/pkgs/{{ package }}/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "/home/user/pkgs/{{ package }}"
+        state: absent
+
+- name: Install package
+  hosts: brighid.xeno
+  become: yes
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    - name: Install package
+      community.general.pacman:
+        name: "/tmp/{{ package_file }}"
+        state: present
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/{{ package_file }}"
+        state: absent
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: config.ini
+        dest: "/var/lib/trilium"
+
+    - name: Enable Apache web socket proxy module
+      ansible.builtin.replace:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^# ?LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel\.so'
+        replace: 'LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel.so'
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/trilium.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/trilium\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/trilium.conf'
+
+    - name: Make sure server is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: keycloak
+        enabled: yes
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Restart server
+      ansible.builtin.systemd:
+        state: restarted
+        name: trilium
+        enabled: yes

@@ -1,0 +1,2 @@
+d /opt/trilium-server 0755 trilium trilium -
+d /var/lib/trilium 0755 trilium trilium -
