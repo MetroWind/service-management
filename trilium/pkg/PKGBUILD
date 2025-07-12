@@ -1,5 +1,5 @@
 pkgname="trilium-next-server-bin"
-pkgver=0.93.0
+pkgver=0.95.0
 pkgrel=1
 pkgdesc="A hierarchical note taking application built on modern technologies (server only)."
 depends=('libxss' 'nss')
@@ -12,7 +12,7 @@ source=("https://github.com/TriliumNext/Notes/releases/download/v$pkgver/Trilium
         "trilium.tmpfiles"
         "trilium.service")
 OPTIONS=(!strip)
-sha512sums=('a10843f5bab9c88b2e4a0f71e2683d9577b97ed080f09fa6244a0d13ed32a0e4ba2eb8ca4e62965daec37ef4f4cf5916e62e7ad2203c6589f5dd5543d75374a6'
+sha512sums=('794dd506a20548a8bec1c75c06ddb1205ad75313467cec01b977cfecf14972035b1d330bc6613d007532e86885daae33b742a70a257cf1558061c0202957f767'
             'c08e90544f303cf40d6655c2b332db3dac5d7eeccda5fba878bf4d21a89113ddff9574f16eeb3213bcd24fe8d40826c1d46a6c35f0cbc047ddc6da36c6f6585d'
             'ef6a134d0545de59b5e87d1d3cad4e3b3f7225f0616cd8f0db93338fe543838ea1eef89bb9b2292496c1f174b900708610746aa98f5c2a54b98a112e6d453b16'
             '172c891f2fd96db5b1d80d3ebf9a687f2905d620a0e1b40d6fabb9810b47edb3baf724fc9c11e7c831db1c5ab64002a0833b1aa880489732737eef364a81431d')
