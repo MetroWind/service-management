@@ -42,11 +42,17 @@
         regexp: '^<Directory "/srv/http">$.*^</Directory>$'
         replace: ""
 
-    - name: Add virtual host name in log
+    - name: Log format
       ansible.builtin.lineinfile:
         path: /etc/httpd/conf/httpd.conf
         regexp: '^\s+LogFormat\s+.*\s+common$'
-        line: 'LogFormat "%h %l %u %t %v \"%r\" %>s %b" common'
+        line: 'LogFormat "%h %l %u %{[%Y-%m-%d:%H:%M:%S %z]}t %v \"%r\" %>s %b" common'
+
+    - name: Combined log format
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^\s+LogFormat\s+.*\s+combined'
+        line: 'LogFormat "%v:%p %h %l %u %{[%Y-%m-%d:%H:%M:%S %z]}t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined'
 
     - name: Create vhosts directory
       ansible.builtin.file:
