@@ -1,0 +1,84 @@
+# It seems the initial setup process has to be done without proxy.
+
+- name: Setup HTTP proxy
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/ejabberd-acme.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/ejabberd-acme\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/ejabberd-acme.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+- name: Setup Ejabberd
+  hosts: obrona.xeno
+  become: yes
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: "ejabberd"
+        state: present
+
+    - name: Copy caddyfile
+      ansible.builtin.copy:
+        src: caddyfile
+        dest: /etc/caddy/conf.d/xmpp.conf
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: ejabberd.yml
+        dest: "/etc/ejabberd/ejabberd.yml"
+
+    - name: Create database dir
+      ansible.builtin.file:
+        path: /var/lib/ejabberd/database
+        state: directory
+        mode: '0755'
+        owner: jabber
+        group: jabber
+
+    - name: Restart caddy
+      ansible.builtin.systemd:
+        state: restarted
+        name: caddy
+        enabled: yes
+
+    - name: Copy systemd service file to copy certificate
+      ansible.builtin.copy:
+        src: copy-cert.service
+        dest: /etc/systemd/system/copy-cert-xmpp.service
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Copy systemd timer file to copy certificate
+      ansible.builtin.copy:
+        src: copy-cert.timer
+        dest: /etc/systemd/system/copy-cert-xmpp.timer
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Start timer
+      ansible.builtin.systemd:
+        state: started
+        name: copy-cert-xmpp.timer
+        enabled: yes
+
+    - name: Restart server
+      ansible.builtin.systemd:
+        state: restarted
+        name: ejabberd
+        enabled: yes

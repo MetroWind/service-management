@@ -1,0 +1,9 @@
+[Unit]
+Description=Copy certificate obtained by Caddy to ejabberd dir
+
+[Service]
+Type=oneshot
+ExecStart=cp /var/lib/caddy/certificates/acme-v02.api.letsencrypt.org-directory/xmpp.xeno.darksair.org/xmpp.xeno.darksair.org.crt /var/lib/caddy/certificates/acme-v02.api.letsencrypt.org-directory/xmpp.xeno.darksair.org/xmpp.xeno.darksair.org.key /var/lib/ejabberd/certs/
+ExecStart=chown jabber:jabber /var/lib/ejabberd/certs/xmpp.xeno.darksair.org.crt /var/lib/ejabberd/certs/xmpp.xeno.darksair.org.key
+User=root
+Group=root
