@@ -1,0 +1,10 @@
+data-dir: "/var/lib/shrt"
+listen-address: /var/run/shrt/shrt.sock
+listen-port: 0
+client-id: shrt
+client-secret: "{{ client_secret }}"
+openid-url-prefix: "https://auth.xeno.darksair.org/realms/xeno"
+base-url: https://go.mws.rocks
+socket-user: shrt
+socket-group: shrt
+socket-permission: 0666

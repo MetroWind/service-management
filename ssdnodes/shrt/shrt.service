@@ -1,0 +1,13 @@
+[Unit]
+Description=Shrt service
+After=network.target
+
+[Service]
+User=shrt
+Group=shrt
+ExecStart=/usr/local/bin/shrt
+Restart=on-failure
+RuntimeDirectory=shrt
+
+[Install]
+WantedBy=multi-user.target

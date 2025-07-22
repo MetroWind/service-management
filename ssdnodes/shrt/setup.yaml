@@ -1,0 +1,117 @@
+- name: Deploy Shrt
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    client_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          35373061383431663430396164356539383333306231323635363965313965613534343530323535
+          3066613530333838373364313137313838623730346239650a626430313564353230376333333262
+          30643535616439313633333261396361636533333236353861363563316532323462306130643065
+          6634353834306532300a306437326432303939666433353834343933323536343339633635643165
+          62613066353562303539393564623666663033346534316534656237643764656237633637303762
+          3333343466376465643437326531356637326665346261313439
+  tasks:
+    - name: Download package
+      ansible.builtin.unarchive:
+        src: https://github.com/MetroWind/shrt/releases/latest/download/shrt.tar.zstd
+        dest: /tmp
+        remote_src: yes
+
+    - name: Install binary
+      ansible.builtin.copy:
+        src: /tmp/shrt/build/shrt
+        dest: /usr/local/bin/shrt
+        owner: root
+        group: root
+        mode: '0755'
+        remote_src: yes
+
+    - name: Create directory for shrt
+      ansible.builtin.file:
+        path: /var/lib/shrt
+        state: directory
+        recurse: yes
+
+    - name: Copy shrt static files
+      ansible.builtin.copy:
+        src: /tmp/shrt/statics/
+        dest: /var/lib/shrt/statics
+        remote_src: yes
+
+    - name: Copy shrt templates
+      ansible.builtin.copy:
+        src: /tmp/shrt/templates/
+        dest: /var/lib/shrt/templates
+        remote_src: yes
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/shrt"
+        state: absent
+
+    - name: Make sure sysusers directory exists
+      ansible.builtin.file:
+        path: /etc/sysusers.d
+        state: directory
+        recurse: yes
+
+    - name: Copy sysusers file
+      ansible.builtin.copy:
+        src: sysusers-shrt.conf
+        dest: /etc/sysusers.d/shrt.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Ensure user
+      ansible.builtin.systemd:
+        state: restarted
+        name: systemd-sysusers
+
+    - name: Set owner of shrt dir
+      ansible.builtin.file:
+        path: /var/lib/shrt
+        owner: shrt
+        group: shrt
+        recurse: yes
+
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: shrt.service
+        dest: /etc/systemd/system/shrt.service
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/shrt.yaml
+        group: shrt
+        owner: shrt
+        mode: 0600
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/shrt.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/shrt\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/shrt.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: shrt
+        enabled: yes
+        daemon_reload: yes
