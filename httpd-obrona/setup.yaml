@@ -1,0 +1,19 @@
+- name: Setup caddy
+  hosts: obrona.xeno
+  become: yes
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: caddy
+        state: present
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: caddyfile
+        dest: /etc/caddy/Caddyfile
+
+    - name: Restart server
+      ansible.builtin.systemd:
+        state: restarted
+        name: caddy
+        enabled: yes
