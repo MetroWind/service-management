@@ -38,7 +38,7 @@ E<void> doBackup(const std::string& path,
                  const std::optional<std::string>& profile,
                  bool dry_run)
 {
-    std::vector<const char*> argv = {"rustic", "backup"};
+    std::vector<const char*> argv = {"rustic", "backup", "--ignore-inode"};
     if(dry_run)
     {
         argv.push_back("--dry-run");

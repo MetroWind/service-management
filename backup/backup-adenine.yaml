@@ -1,0 +1,8 @@
+rustic-profile: xeno
+sources:
+  - source:
+      type: path
+      path: "/mnt/stuff/Documents"
+  - source:
+      type: path
+      path: /mnt/stuff/Pictures/photos

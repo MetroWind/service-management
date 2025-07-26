@@ -1,0 +1,78 @@
+- name: Setup Adenine
+  hosts: adenine.xeno
+  become: yes
+  vars:
+    repo_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62393238666133386463623336353739356431333863346265306562663933393966333138663262
+          3166313661363136346337363562373362346564643863650a346236643366383831613435343238
+          37636638313165373835626133306336636230646332656439316136306562376435663732313236
+          3338323064313562380a663561393538343738633062373032346130616264396432643232663737
+          6365
+    app_key: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62643061313639323362306135326363363333653432623561333864326539313430663838356361
+          3535636438663234613532663065353266373134363836300a653237623664386364666164666564
+          65646264353336333239613562353366633965393162303839343236393666636331383639623933
+          6231346365666631370a353362643264636530663263306332653363646166326235373537356437
+          33386635306137653831343037393731626436616132356464383661633933353630
+  tasks:
+    - name: Install Rustic
+      community.general.pacman:
+        name: rustic
+        state: present
+
+    - name: Download backup runner
+      ansible.builtin.get_url:
+        url: "https://github.com/MetroWind/service-management/releases/latest/download/backup-runner.zst"
+        dest: /usr/local/bin/backup-runner.zst
+
+    - name: Uncompress backup runner
+      ansible.builtin.command:
+        cmd: unzstd -f --rm /usr/local/bin/backup-runner.zst
+        creates: /usr/local/bin/backup-runner
+
+    - name: Set file mode
+      ansible.builtin.file:
+        path: /usr/local/bin/backup-runner
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create directory for Rustic config
+      ansible.builtin.file:
+        path: ~/.config/rustic
+        state: directory
+        recurse: yes
+
+    - name: Copy Rustic config
+      ansible.builtin.template:
+        src: xeno.toml
+        dest: ~/.config/rustic/xeno.toml
+
+    - name: Copy backup plan
+      ansible.builtin.copy:
+        src: backup-adenine.yaml
+        dest: /etc/backup.yaml
+
+    - name: Copy backup timer
+      ansible.builtin.copy:
+        src: backup-adenine.timer
+        dest: /etc/systemd/system/backup.timer
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Copy backup service file
+      ansible.builtin.copy:
+        src: backup.service
+        dest: /etc/systemd/system/backup.service
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Make sure backup timer is running and enabled
+      ansible.builtin.systemd:
+        state: started
+        name: backup.timer
+        enabled: yes

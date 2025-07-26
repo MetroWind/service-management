@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily backup
+
+[Timer]
+OnCalendar=*-*-* 2:00:00
+Persistent=true
+RandomizedDelaySec=600
+# Not setting Unit= to use the unit with the same name as this timer.
+
+[Install]
+WantedBy=timers.target

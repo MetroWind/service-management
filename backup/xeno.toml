@@ -1,0 +1,13 @@
+# rustic config file to use B2 storage via Apache OpenDAL
+[repository]
+repository = "opendal:b2" # just specify the opendal service here
+password = "{{ repo_password }}"
+
+# B2 specific options
+[repository.options]
+# Here, we give the required b2 options, see https://opendal.apache.org/docs/rust/opendal/services/struct.B2.html
+application_key_id = "0051221177e4a130000000001" # B2 application key ID
+application_key = "{{ app_key }}" # B2 application key secret. Can be also set using OPENDAL_APPLICATION_KEY
+bucket = "mw-backups-home" # B2 bucket name
+bucket_id = "51d2b23181b7075e847a0113" # B2 bucket ID
+root = "/xeno"

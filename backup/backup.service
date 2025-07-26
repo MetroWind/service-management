@@ -1,0 +1,12 @@
+[Unit]
+Description=Run backup
+After=network.target
+
+[Service]
+User=root
+Group=root
+Restart=no
+ExecStart=/usr/local/bin/backup-runner
+
+[Install]
+WantedBy=multi-user.target
