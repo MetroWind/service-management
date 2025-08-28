@@ -1,0 +1,28 @@
+# See https://git.zx2c4.com/cgit/tree/cgitrc.5.txt for references.
+
+css=/statics/cgit.css
+logo=/statics/cgit.png
+js=/statics/cgit.js
+
+# Following lines work with the above Apache config
+#css=/cgit-css/cgit.css
+#logo=/cgit-css/cgit.png
+
+# Following lines work with the above Lighttpd config
+#css=/cgit/cgit.css
+#logo=/cgit/cgit.png
+
+# Allow http transport git clone
+enable-http-clone=1
+clone-url=https://git.xeno.darksair.org/$CGIT_REPO_URL
+
+enable-commit-graph=1
+
+# Easy pages???
+#enable-html-serving=1
+
+# If cgit messes up links, use a virtual-root. For example,
+# cgit.example.org/ has this value:
+virtual-root=/
+
+scan-path=/var/lib/gitolite/repositories/

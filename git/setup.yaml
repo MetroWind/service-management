@@ -1,0 +1,114 @@
+- name: Install Gitolite
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: gitolite
+        state: present
+
+    - name: Copy admin pubkey
+      ansible.builtin.copy:
+        src: /home/mw/.ssh/id_ed25519.pub
+        dest: /tmp/mw.pub
+        owner: gitolite
+        group: gitolite
+
+    - name: Setup account
+      become: yes
+      become_user: gitolite
+      ansible.builtin.command:
+        cmd: "gitolite setup -pk /tmp/mw.pub"
+
+    - name: Remove pubkey
+      ansible.builtin.file:
+        path: /tmp/mw.pub
+        state: absent
+
+    - name: Add the http user to the gitolite group
+      ansible.builtin.user:
+        name: http
+        groups: gitolite
+        append: yes
+
+    - name: Change default file permission
+      ansible.builtin.replace:
+        path: /var/lib/gitolite/.gitolite.rc
+        regexp: '^\$UMASK *=.*'
+        replace: '$UMASK = 0027'
+
+    - name: Change dir permission
+      ansible.builtin.command:
+        cmd: "chmod g+rX /var/lib/gitolite"
+
+    - name: Change dir permission
+      ansible.builtin.command:
+        cmd: "chmod -R g+rX /var/lib/gitolite/repositories"
+
+    - name: Let git ignore ownership mismatch
+      ansible.builtin.command:
+        cmd: "git config --system safe.directory '*'"
+
+    - name: Create dir for passwd file
+      ansible.builtin.file:
+        path: /srv/http-git
+        state: directory
+        group: gitolite
+        owner: gitolite
+        mode: '0755'
+
+    - name: Create passwd file for HTTP push
+      ansible.builtin.file:
+        path: /srv/http-git/htpasswd
+        state: touch
+        group: http
+        owner: gitolite
+        mode: 0640
+
+    - name: Copy backend wrapper
+      ansible.builtin.copy:
+        src: backend-wrapper.sh
+        dest: /srv/http-git/backend-wrapper.sh
+        group: gitolite
+        owner: gitolite
+        mode: 0755
+
+    - name: Copy cgit wrapper
+      ansible.builtin.copy:
+        src: cgit-wrapper.sh
+        dest: /srv/http-git/cgit-wrapper.sh
+        group: gitolite
+        owner: gitolite
+        mode: 0755
+
+- name: Install cgit
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: cgit
+        state: present
+
+    - name: Copy cgit config
+      ansible.builtin.copy:
+        src: cgitrc
+        dest: /etc/cgitrc
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/cgit.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/cgit\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/cgit.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
