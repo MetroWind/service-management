@@ -20,6 +20,14 @@
       ansible.builtin.command:
         cmd: "gitolite setup -pk /tmp/mw.pub"
 
+    - name: Copy gitolite rc file
+      ansible.builtin.copy:
+        src: gitolite.rc
+        dest: "/var/lib/gitolite/.gitolite.rc"
+        owner: gitolite
+        group: gitolite
+        mode: 0600
+
     - name: Remove pubkey
       ansible.builtin.file:
         path: /tmp/mw.pub
@@ -87,13 +95,22 @@
   tasks:
     - name: Install package
       community.general.pacman:
-        name: cgit
+        name:
+          - cgit
+          - python-pygments
+          - python-markdown
         state: present
 
     - name: Copy cgit config
       ansible.builtin.copy:
         src: cgitrc
         dest: /etc/cgitrc
+
+    - name: Copy root readme
+      ansible.builtin.copy:
+        src: cgit-about.html
+        dest: /srv/http-git/README.html
+        mode: 0644
 
     - name: Copy Apache config
       ansible.builtin.copy:
