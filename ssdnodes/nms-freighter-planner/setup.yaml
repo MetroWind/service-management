@@ -1,0 +1,13 @@
+- name: Deploy NMS Freighter Planner
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Remove existing dir
+      ansible.builtin.file:
+        path: /srv/http/root/nms-freighter-planner
+        state: absent
+
+    - name: Git checkout
+      ansible.builtin.git:
+        repo: 'https://git.xeno.darksair.org/nms-freighter-planner.git'
+        dest: /srv/http/root/nms-freighter-planner
