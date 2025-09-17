@@ -1,0 +1,20 @@
+[Unit]
+Description=Redlib Server
+After=network.target
+
+[Service]
+Environment="REDLIB_BANNER=MetroWind’s Reddit viewer"
+Environment="REDLIB_ROBOTS_DISABLE_INDEXING=on"
+Environment="REDLIB_DEFAULT_WIDE=off"
+Environment="REDLIB_DEFAULT_LAYOUT=compact"
+Environment="REDLIB_DEFAULT_BLUR_SPOILER=on"
+Environment="REDLIB_DEFAULT_SHOW_NSFW=on"
+Environment="REDLIB_DEFAULT_BLUR_NSFW=on"
+Environment="REDLIB_DEFAULT_SUBSCRIPTIONS=BaldursGate3+BudgetKeebs+CitiesSkylines+computerviruses+DataHoarder+DigitalGardens+dwarffortress+Eldenring+emacs+FireEmblemThreeHopes+firefox+flightsim+freemacs+granturismo+HiTMAN+homelab+iamverybadass+iamverysmart+itsaunixsystem+lingling40hrs+MapPorn+masterhacker+math+MechanicalKeyboards+MicrosoftFlightSim+mini4wd+nethack+netsec+NintendoSwitch+NintendoSwitchDeals+NoMansSkyTheGame+OLED_Gaming+opendirectories+photography+Physics+PlanetCoaster+proceduralgeneration+programming+PTCGP+rct+redalert2+screenshotsarehard+selfhosted+snowrunner+starcraft2coop+TCGCardTycoon+techsupportgore+thesims+ultrawidemasterrace+unixporn+unstable_diffusion+uselessnobody+VampireSurvivors+WatchesCirclejerk+Xenoblade_Chronicles+Xenoblade_R34+yakuzagames+Zettelkasten"
+User=redlib
+Group=redlib
+Restart=always
+ExecStart=/usr/local/bin/redlib -p 46004
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,65 @@
+- name: Setup redlib
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Download binary
+      ansible.builtin.unarchive:
+        src: "https://github.com/redlib-org/redlib/releases/latest/download/redlib-x86_64-unknown-linux-musl.tar.gz"
+        dest: /usr/local/bin
+        remote_src: yes
+    - name: Create sysuser dir
+      ansible.builtin.file:
+        path: /etc/sysusers.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Copy sysusers file
+      ansible.builtin.copy:
+        src: sysusers.conf
+        dest: /etc/sysusers.d/redlib.conf
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure user
+      ansible.builtin.systemd:
+        state: restarted
+        name: systemd-sysusers
+    - name: Copy config file
+      ansible.builtin.copy:
+        src: redlib.toml
+        dest: /etc/redlib.toml
+        owner: redlib
+        group: redlib
+        mode: '0644'
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: redlib.service
+        dest: /etc/systemd/system/redlib.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure redlib service is enabled and started
+      ansible.builtin.systemd:
+        state: restarted
+        name: redlib
+        enabled: yes
+        daemon_reload: true
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/redlib.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/redlib\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/redlib.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes

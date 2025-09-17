@@ -1,0 +1,10 @@
+REDLIB_BANNER = "MetroWind’s Reddit viewer"
+REDLIB_ROBOTS_DISABLE_INDEXING = "on"
+REDLIB_PORT = 46004
+REDLIB_DEFAULT_WIDE = "on"
+REDLIB_DEFAULT_LAYOUT = "compact"
+REDLIB_DEFAULT_WIDE = "on"
+REDLIB_DEFAULT_BLUR_SPOILER = "on"
+REDLIB_DEFAULT_SHOW_NSFW = "on"
+REDLIB_DEFAULT_BLUR_NSFW = "on"
+REDLIB_DEFAULT_SUBSCRIPTIONS = "BaldursGate3+BudgetKeebs+CitiesSkylines+computerviruses+DataHoarder+DigitalGardens+dwarffortress+Eldenring+emacs+FireEmblemThreeHopes+firefox+flightsim+freemacs+granturismo+HiTMAN+homelab+iamverybadass+iamverysmart+itsaunixsystem+lingling40hrs+MapPorn+masterhacker+math+MechanicalKeyboards+MicrosoftFlightSim+mini4wd+nethack+netsec+NintendoSwitch+NintendoSwitchDeals+NoMansSkyTheGame+OLED_Gaming+opendirectories+photography+Physics+PlanetCoaster+proceduralgeneration+programming+PTCGP+rct+redalert2+screenshotsarehard+selfhosted+snowrunner+starcraft2coop+TCGCardTycoon+techsupportgore+thesims+ultrawidemasterrace+unixporn+unstable_diffusion+uselessnobody+VampireSurvivors+WatchesCirclejerk+Xenoblade_Chronicles+Xenoblade_R34+yakuzagames+Zettelkasten"
