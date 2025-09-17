@@ -1,0 +1,8 @@
+- name: Deploy home page
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Copy dir to http root
+      ansible.builtin.copy:
+        src: "homepage-v4/"
+        dest: /srv/http/root

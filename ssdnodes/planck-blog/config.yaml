@@ -15,7 +15,7 @@ substitutions:
   nav-center: |
     <ul style="list-style: none; text-align: center; display: flex; align-items: center; gap: 24px;">
       <li style="height: 20px;">
-        <a href="https://darksair.org/" aria-label="Home" color="currentcolor" style="display: inline-block; height: 20px;">
+        <a href="http://mws.rocks/" aria-label="Home" color="currentcolor" style="display: inline-block; height: 20px;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 486.988 486.988" width="20" height="20" style="display: inline-block;">
             <path fill="currentcolor"
                   d="M16.822,284.968h39.667v158.667c0,9.35,7.65,17,17,17h116.167c9.35,0,17-7.65,17-17V327.468h70.833v116.167
@@ -27,8 +27,9 @@ substitutions:
           </svg>
         </a>
       </li>
-      <li><a href="https://blog.mws.rocks/">Blog</a></li>
-      <li><a href="https://darksair.org/wiki/">Notes</a></li>
+      <li><a href="http://blog.mws.rocks/">Blog</a></li>
+      <li><a href="https://notes.xeno.darksair.org/share/">Notes</a></li>
+      <li><a href="http://photos.mws.rocks/">Photo stream</a></li>
     </ul>
   after-post: |
     <script>

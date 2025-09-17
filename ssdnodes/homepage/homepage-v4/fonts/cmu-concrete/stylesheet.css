@@ -1,0 +1,44 @@
+@font-face {
+    font-family: 'CMU Concrete';
+    src: url('cmunobi-webfont.woff2') format('woff2'),
+         url('cmunobi-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+
+}
+
+
+
+
+@font-face {
+    font-family: 'CMU Concrete';
+    src: url('cmunobx-webfont.woff2') format('woff2'),
+         url('cmunobx-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+
+}
+
+
+
+
+@font-face {
+    font-family: 'CMU Concrete';
+    src: url('cmunorm-webfont.woff2') format('woff2'),
+         url('cmunorm-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+
+
+
+@font-face {
+    font-family: 'CMU Concrete';
+    src: url('cmunoti-webfont.woff2') format('woff2'),
+         url('cmunoti-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+
+}
