@@ -50,6 +50,11 @@ ul
     list-style-type: square;
 }
 
+#Wrapper1stScreen
+{
+    min-height: 100vh;
+}
+
 nav #IconHome
 {
     height: 1em;
@@ -151,3 +156,19 @@ section#SecProgs ul
 /* { */
 /*     margin-bottom: 1em; */
 /* } */
+
+#Wrappen2ndScreen
+{
+    margin: 32px 0px;
+}
+
+#ButtonGallery > ul
+{
+    display: flex;
+    list-style: none;
+    line-height: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0px;             /* To collapes white spaces */
+}
