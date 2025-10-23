@@ -1,0 +1,29 @@
+- name: Deploy simple web apps
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Remove existing dir
+      ansible.builtin.file:
+        path: /srv/http/root/nms-freighter-planner
+        state: absent
+
+    - name: Git checkout
+      ansible.builtin.git:
+        repo: 'https://git.xeno.darksair.org/simple-web-apps.git'
+        dest: /tmp/simple-web-apps
+
+    - name: Copy a web apps to hosting dir
+      ansible.builtin.copy:
+        src: /tmp/simple-web-apps/
+        dest: /srv/http/root/
+        remote_src: yes
+
+    - name: Remove git metadata
+      ansible.builtin.file:
+        path: "/srv/http/root/.git"
+        state: absent
+
+    - name: Remove tmp dir
+      ansible.builtin.file:
+        path: /tmp/simple-web-apps
+        state: absent
