@@ -172,3 +172,8 @@ section#SecProgs ul
     gap: 10px;
     font-size: 0px;             /* To collapes white spaces */
 }
+
+img.PixelArt
+{
+    image-rendering: crisp-edges;
+}
