@@ -46,6 +46,8 @@
         name:
           - openai
           - chainlit
+          - beautifulsoup4
+          - requests
         virtualenv: "/opt/llm/env"
 
     - name: Ensure app home dir
@@ -56,10 +58,10 @@
         mode: 0755
         state: directory
 
-    - name: Copy encrypted accounts file
+    - name: Copy encrypted credentials file
       ansible.builtin.copy:
-        src: accounts-chat.toml
-        dest: /opt/llm/chat/accounts.toml
+        src: credentials-chat.toml
+        dest: /opt/llm/chat/credentials.toml
         owner: cl_chat
         group: cl_chat
         mode: 0600

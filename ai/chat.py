@@ -1,27 +1,23 @@
 import os
 import base64
 import tomllib
+import re
+from urllib.parse import urlparse, urlunparse
 
 import chainlit as cl
 from openai import AsyncOpenAI
+import requests
+from bs4 import BeautifulSoup
 
-# --- CONFIGURATION ---
-
-# 1. Point this to your local llama.cpp server
-# Note: We use "host.docker.internal" if in docker, but "localhost" works if running natively
 LLAMA_API_URL = "http://localhost:8080/v1"
-LLAMA_API_KEY = "sk-dummy-key" # llama.cpp doesn't verify this by default
+CREDENTIALS_FILE = "credentials.toml"
 
-# 2. Define your Users (Static Configuration)
-# Format: "username": "password"
-def loadUsers():
-    """Loads users from users.toml, or returns default users if file doesn't exist."""
-    if os.path.exists("accounts.toml"):
-        with open("accounts.toml", "r") as f:
-            users = tomllib.load(f)
-        return users
+def loadCredentials():
+    if os.path.exists(CREDENTIALS_FILE):
+        with open(CREDENTIALS_FILE, "rb") as f:
+            return tomllib.load(f)
     else:
-        return {"guest": "llm"}
+        return {}
 
 def findSysPromptPresets():
     """Finds and loads system prompt presets from a directory.
@@ -62,7 +58,7 @@ def auth_callback(username, password):
     Check if username/password matches the dictionary above.
     Returns a User object if valid, None if invalid.
     """
-    users = loadUsers()
+    users = loadCredentials()["accounts"]
     if username in users and users[username] == password:
         # You can add "role" or "provider" here if you want to get fancy later
         return cl.User(identifier=username)
@@ -70,13 +66,53 @@ def auth_callback(username, password):
 
 # --- CHAT LOGIC ---
 
+def extract_urls(text):
+    """Extracts URLs from a string."""
+    url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}')
+    urls = url_pattern.findall(text)
+    sanitized_urls = []
+    for url in urls:
+        try:
+            result = urlparse(url)
+            sanitized_url = urlunparse(result)
+            sanitized_urls.append(sanitized_url)
+        except:
+            pass
+    return sanitized_urls
+
+def fetch_webpage_content(url):
+    """Fetches and extracts text from a webpage."""
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        # Extract text from the body, excluding scripts and styles.
+        for script in soup(["script", "style"]):
+            script.decompose()
+        text = soup.get_text()
+        return text
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching URL {url}: {e}")
+        return None
+    except Exception as e:
+        print(f"Error parsing URL {url}: {e}")
+        return None
+
+def summarize_text(text, max_length=2000):
+    """Summarizes text if it exceeds a maximum length."""
+    if len(text) > max_length:
+        return text[:max_length] + "..."
+    return text
+
+
 @cl.on_chat_start
 async def start():
     """
     Runs when a user logs in or refreshes the page.
     """
+    api_key = loadCredentials()["api_key"]
     # Create the OpenAI client specifically for this user session
-    client = AsyncOpenAI(base_url=LLAMA_API_URL, api_key=LLAMA_API_KEY)
+    client = AsyncOpenAI(base_url=LLAMA_API_URL, api_key=api_key)
 
     # Store the client in the user session so we can reuse it
     cl.user_session.set("client", client)
@@ -190,6 +226,15 @@ async def main(message: cl.Message):
                 content.append({"type": "image_url", "image_url": {
                     "url": f"data:{element.mime};base64,{base64_image}"}})
     content.append({"type": "text", "text": message.content})
+
+    # Extract URLs and fetch content
+    urls = extract_urls(message.content)
+    for url in urls:
+        webpage_content = fetch_webpage_content(url)
+        if webpage_content:
+            summarized_content = summarize_text(webpage_content)
+            content.append({"type": "text", "text": f"Here is the content of the webpage: {url}:\n{summarized_content}"})
+
     message_history.append({"role": "user", "content": content})
 
     # Create a streaming message bucket
