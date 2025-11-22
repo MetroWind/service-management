@@ -1,0 +1,15 @@
+[Unit]
+Description=Chainlit Chat UI
+After=network.target
+
+[Service]
+Type=simple
+User=cl_chat
+WorkingDirectory=/opt/llm/chat
+Environment="CHAINLIT_AUTH_SECRET=eXmBmm64F9eLQc2Grfg^_=@yqAK*Ua2-^m^xlomXHC>5N-a=6MBNiqFA~$5i~*^x"
+ExecStart=/opt/llm/env/bin/chainlit run chat.py -h --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

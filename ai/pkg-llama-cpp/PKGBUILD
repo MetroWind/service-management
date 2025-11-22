@@ -1,0 +1,50 @@
+pkgname=llama.cpp-git
+pkgver=1.0
+pkgrel=1
+pkgdesc="LLaMA.cpp on kosmos"
+arch=('x86_64')
+url="https://github.com/ggml-org/llama.cpp"
+license=('MIT')
+groups=()
+depends=('cuda-12.9')           # GTX1080
+makedepends=('git' 'cmake' 'gcc' 'curl')
+provides=("${pkgname%-git}")
+conflicts=("${pkgname%-git}" libggml ggml)
+replaces=()
+backup=("etc/llama.cpp.conf")
+# Stripping doesn’t work with ryml.
+options=(!debug)
+source=('git+https://github.com/ggml-org/llama.cpp.git' "sysusers-${pkgname%-git}.conf"
+        "${pkgname%-git}.service" "${pkgname%-git}.conf")
+noextract=()
+sha256sums=('SKIP' "f90f5169ab687c7f673ef85ae554e837eb50311642193f7f02f5dd8a801b6f6e"
+            "9c71f8da51dea5996bb530f8b78a900a6f49ad9cd010db072f5fb5808eb55c73"
+            "53fa70cfe40cb8a3ca432590e4f76561df0f129a31b121c9b4b34af0da7c4d87")
+
+pkgver()
+{
+	cd "$srcdir/${pkgname%-git}"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+build()
+{
+	cd "$srcdir/${pkgname%-git}"
+    # Usually CMAKE_BUILD_TYPE is set to be “None” in a PKGBUILD. But
+    # it doesn’t work well with ryml.
+    cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX='/usr' \
+          -DGGML_CUDA=ON \
+          -Wno-dev .
+    cmake --build build
+}
+
+package()
+{
+    cd "$srcdir/${pkgname%-git}"
+    DESTDIR="$pkgdir" cmake --install build
+    install -Dm 644 "${srcdir}/sysusers-${pkgname%-git}.conf" "${pkgdir}/usr/lib/sysusers.d/${pkgname%-git}.conf"
+    install -Dm644 "${srcdir}/llama.cpp.conf" "${pkgdir}/etc/llama.cpp.conf"
+    install -Dm644 "${srcdir}/llama.cpp.service" "${pkgdir}/usr/lib/systemd/system/llama.cpp.service"
+}

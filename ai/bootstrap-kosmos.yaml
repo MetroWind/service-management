@@ -1,0 +1,27 @@
+---
+- name: Bootstrap Kosmos
+  hosts: kosmos.xeno
+  become: yes
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name:
+          - base-devel
+          - cmake
+          - git
+          - python
+          - wget
+          - btrfs-progs
+          - python-pip
+          - python-virtualenv
+          - python-setuptools
+        state: present
+
+    - name: Enable parallel compile
+      ansible.builtin.lineinfile:
+        path: /etc/makepkg.conf
+        regexp: '^# *MAKEFLAGS="-j.*"'
+        line: 'MAKEFLAGS="-j16"'
+        owner: root
+        group: root
+        mode: '0644'
