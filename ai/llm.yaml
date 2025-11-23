@@ -1,20 +1,58 @@
 ---
-# - name: Build llama.cpp
-#   hosts: kosmos.xeno
-#   become: yes
-#   tasks:
-#     - name: Copy PKGBUILD
+- name: Build llama.cpp
+  hosts: kosmos.xeno
+  tasks:
+    - name: Copy PKGBUILD
+      ansible.builtin.copy:
+        src: "pkg-llama-cpp"
+        dest: "/tmp/"
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: /tmp/pkg-llama-cpp
+        creates: "/tmp/pkg-llama-cpp/llama.cpp-git-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 llama.cpp-git-*-x86_64.pkg.tar.zst | fgrep -v debug"
+        chdir: "/tmp/pkg-llama-cpp"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
 
 - name: Setup LLM
   hosts: kosmos.xeno
   become: yes
   vars:
     profile: assistant
+    package_file: "{{ hostvars['kosmos.xeno']['package_file'] }}"
   tasks:
+    - name: Install package
+      community.general.pacman:
+        name: "/tmp/pkg-llama-cpp/{{ package_file }}"
+        state: present
     - name: Copy llama server config
       ansible.builtin.copy:
         src: "llama-server-configs/{{ profile }}.conf"
         dest: "/etc/llama.cpp.conf"
+    - name: Copy llama server API key config
+      ansible.builtin.copy:
+        src: "llama.cpp-apikey.conf"
+        dest: "/etc/llama.cpp-apikey.conf"
+        owner: llama
+        group: llama
+        mode: 0600
+    - name: Ensure llama.cpp server is enabled and started
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        state: restarted
+        name: llama.cpp
+        enabled: yes
 
     - name: Copy chat templates
       ansible.builtin.copy:
@@ -42,7 +80,7 @@
         name: systemd-sysusers
 
     - name: Create venv
-      pip:
+      ansible.builtin.pip:
         name:
           - openai
           - chainlit

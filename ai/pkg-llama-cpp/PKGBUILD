@@ -18,18 +18,19 @@ source=('git+https://github.com/ggml-org/llama.cpp.git' "sysusers-${pkgname%-git
         "${pkgname%-git}.service" "${pkgname%-git}.conf")
 noextract=()
 sha256sums=('SKIP' "f90f5169ab687c7f673ef85ae554e837eb50311642193f7f02f5dd8a801b6f6e"
-            "9c71f8da51dea5996bb530f8b78a900a6f49ad9cd010db072f5fb5808eb55c73"
+            "ac040a76ce1da5b1926b86249186bbe3a7dedb80aa5406916d9a22d23d38d280"
             "53fa70cfe40cb8a3ca432590e4f76561df0f129a31b121c9b4b34af0da7c4d87")
 
 pkgver()
 {
-	cd "$srcdir/${pkgname%-git}"
+    cd "$srcdir/${pkgname%-git}"
     printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 }
 
 build()
 {
-	cd "$srcdir/${pkgname%-git}"
+    source /etc/profile.d/cuda.sh
+    cd "$srcdir/${pkgname%-git}"
     # Usually CMAKE_BUILD_TYPE is set to be “None” in a PKGBUILD. But
     # it doesn’t work well with ryml.
     cmake -B build \

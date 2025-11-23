@@ -5,7 +5,8 @@ After=syslog.target network.target local-fs.target remote-fs.target nss-lookup.t
 [Service]
 Type=simple
 EnvironmentFile=/etc/llama.cpp.conf
-ExecStart=/usr/bin/llama-server $LLAMA_ARGS
+EnvironmentFile=/etc/llama.cpp-apikey.conf
+ExecStart=/usr/bin/llama-server $LLAMA_ARGS --api-key $LLAMA_API_KEY
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
 User=llama
