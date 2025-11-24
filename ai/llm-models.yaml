@@ -1,0 +1,50 @@
+---
+- name: Download LLM models
+  hosts: kosmos.xeno
+  become: yes
+  tasks:
+    - name: Download Mistral small 3.2 model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - /mnt/data/models/llm/Mistral-Small-3.2-24B-Instruct-2506-Q6_K.gguf
+          - https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/resolve/main/Mistral-Small-3.2-24B-Instruct-2506-Q6_K.gguf
+
+    - name: Download Mistral small 3.2 chat template
+      ansible.builtin.get_url:
+        url: "https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506/resolve/main/chat_template.jinja"
+        dest: /mnt/data/models/llm/Mistral-Small-3.2-24B-Instruct-2506.jinja
+
+    - name: Download gemma 3 model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - /mnt/data/models/llm/gemma-3-27b-it-Q5_K_M.gguf
+          - "https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/resolve/main/gemma-3-27b-it-Q5_K_M.gguf"
+
+    - name: Download gemma 3 mmproj
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - /mnt/data/models/llm/gemma-3-mmproj-BF16.gguf
+          - https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/resolve/main/mmproj-BF16.gguf
+
+    - name: Download Qwen3 Coder model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - /mnt/data/models/llm/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf
+          - "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
+
+    - name: Download Qwen3 Coder model
+      ansible.builtin.get_url:
+        url: https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/template
+        dest: /mnt/data/models/llm/qwen3-coder.jinja
