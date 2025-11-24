@@ -116,20 +116,13 @@ async def start():
 
     # Store the client in the user session so we can reuse it
     cl.user_session.set("client", client)
-    username = cl.user_session.get("user").identifier
-    if username == "mw":
-        available_prompt_preset_names = SYS_PROMPT_PRESETS.keys()
-    else:
-        available_prompt_preset_names = \
-            [key for key in SYS_PROMPT_PRESETS.keys() if key != "girlfriend"]
-
     settings = await cl.ChatSettings(
         [
             # 1. The Preset Dropdown
             cl.input_widget.Select(
                 id="system_preset",
                 label="System Persona (Preset)",
-                values=sorted(available_prompt_preset_names),
+                values=sorted(SYS_PROMPT_PRESETS.keys()),
                 initial_index=0,
             ),
             # 2. The Custom Override
