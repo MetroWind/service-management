@@ -38,11 +38,11 @@
         state: present
     - name: Copy llama server config
       ansible.builtin.copy:
-        src: "llama-server-configs/{{ profile }}.conf"
+        src: "files/llama-server-configs/{{ profile }}.conf"
         dest: "/etc/llama.cpp.conf"
     - name: Copy llama server API key config
       ansible.builtin.copy:
-        src: "llama.cpp-apikey.conf"
+        src: "files/llama.cpp-apikey.conf"
         dest: "/etc/llama.cpp-apikey.conf"
         owner: llama
         group: llama
@@ -56,7 +56,7 @@
 
     - name: Copy chat templates
       ansible.builtin.copy:
-        src: "Mistral-Small-3.2-24B-Instruct-2506.jinja"
+        src: "files/Mistral-Small-3.2-24B-Instruct-2506.jinja"
         dest: "/mnt/data/models/llm/"
 
     - name: Ensure sysusers dir
@@ -69,7 +69,7 @@
 
     - name: Copy sysusers file
       ansible.builtin.copy:
-        src: chainlit-chat.sysusers
+        src: files/chainlit-chat.sysusers
         dest: /usr/local/lib/sysusers.d/chainlit-chat.conf
         owner: root
         group: root
@@ -98,7 +98,7 @@
 
     - name: Copy encrypted credentials file
       ansible.builtin.copy:
-        src: credentials-chat.toml
+        src: files/credentials-chat.toml
         dest: /opt/llm/chat/credentials.toml
         owner: cl_chat
         group: cl_chat
@@ -110,11 +110,11 @@
         dest: "/opt/llm/chat/"
     - name: Copy app file
       ansible.builtin.copy:
-        src: chat.py
+        src: files/chat.py
         dest: "/opt/llm/chat/chat.py"
     - name: Copy app service file
       ansible.builtin.copy:
-        src: chainlit-chat.service
+        src: files/chainlit-chat.service
         dest: /etc/systemd/system/chainlit-chat.service
         owner: root
         group: root
@@ -134,7 +134,7 @@
   tasks:
     - name: Copy Apache config
       ansible.builtin.copy:
-        src: http-chat.conf
+        src: files/http-chat.conf
         dest: /etc/httpd/conf/extra/llm-chat.conf
 
     - name: Enable vhost
