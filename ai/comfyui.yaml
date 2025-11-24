@@ -1,0 +1,69 @@
+---
+- name: Setup ComfyUI
+  hosts: kosmos.xeno
+  become: yes
+  tasks:
+    - name: Copy sysusers file
+      ansible.builtin.copy:
+        src: files/comfyui.sysusers
+        dest: /usr/local/lib/sysusers.d/comfyui.conf
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure user
+      ansible.builtin.systemd:
+        state: restarted
+        name: systemd-sysusers
+
+    - name: Ensure diffusion dir
+      ansible.builtin.file:
+        path: /opt/stable-diffusion
+        owner: root
+        group: root
+        mode: 0755
+        state: directory
+
+    - name: Ensure ComfyUI directory
+      ansible.builtin.file:
+        path: /opt/stable-diffusion/comfyui
+        owner: comfyui
+        group: comfyui
+        mode: 0755
+        state: directory
+
+    - name: Clone ComfyUI
+      become: yes
+      become_user: comfyui
+      ansible.builtin.git:
+        repo: https://github.com/comfyanonymous/ComfyUI.git
+        dest: /opt/stable-diffusion/comfyui/comfyui
+
+    - name: Copy model path config
+      ansible.builtin.copy:
+        src: files/comfyui-model-path.yaml
+        dest: /opt/stable-diffusion/comfyui/comfyui/extra_model_paths.yaml
+        owner: comfyui
+        group: comfyui
+        mode: '0644'
+
+    - name: Install multi-gpu extention
+      become: yes
+      become_user: comfyui
+      ansible.builtin.git:
+        repo: https://github.com/pollockjj/ComfyUI-MultiGPU.git
+        dest: /opt/stable-diffusion/comfyui/comfyui/custom_nodes/ComfyUI-MultiGPU
+
+    - name: Build env
+      ansible.builtin.pip:
+        name:
+          - torch
+          - torchvision
+          - torchaudio
+          - accelerate
+        virtualenv: /opt/stable-diffusion/env
+        extra_args: "--extra-index-url https://download.pytorch.org/whl/cu126"
+
+    - name: Install dependencies
+      ansible.builtin.pip:
+        virtualenv: /opt/stable-diffusion/env
+        requirements: /opt/stable-diffusion/comfyui/comfyui/requirements.txt
