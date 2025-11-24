@@ -98,7 +98,7 @@ def fetch_webpage_content(url):
         print(f"Error parsing URL {url}: {e}")
         return None
 
-def summarize_text(text, max_length=2000):
+def summarize_text(text, max_length=20000):
     """Summarizes text if it exceeds a maximum length."""
     if len(text) > max_length:
         return text[:max_length] + "..."
