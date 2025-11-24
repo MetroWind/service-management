@@ -5,26 +5,20 @@
   tasks:
     - name: Copy llama server config
       ansible.builtin.copy:
-        src: "files/llama-server-configs/{{ profile }}.conf"
+        src: "files/llama-server-configs/"
+        dest: "/etc/llama.cpp.d/"
+    - name: Link the llama server config for the model to use
+      ansible.builtin.file:
+        src: "/etc/llama.cpp.d/qwen3-coder.conf"
         dest: "/etc/llama.cpp.conf"
-    - name: Copy llama server API key config
-      ansible.builtin.copy:
-        src: "files/llama.cpp-apikey.conf"
-        dest: "/etc/llama.cpp-apikey.conf"
-        owner: llama
-        group: llama
-        mode: 0600
+        state: link
+
     - name: Ensure llama.cpp server is enabled and started
       ansible.builtin.systemd:
         daemon_reload: yes
         state: restarted
         name: llama.cpp
         enabled: yes
-
-    - name: Copy chat templates
-      ansible.builtin.copy:
-        src: "files/Mistral-Small-3.2-24B-Instruct-2506.jinja"
-        dest: "/mnt/data/models/llm/"
 
     - name: Ensure sysusers dir
       ansible.builtin.file:
