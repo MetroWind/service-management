@@ -9,7 +9,7 @@
         dest: "/etc/llama.cpp.d/"
     - name: Link the llama server config for the model to use
       ansible.builtin.file:
-        src: "/etc/llama.cpp.d/qwen3-coder.conf"
+        src: "/etc/llama.cpp.d/gemma3.conf"
         dest: "/etc/llama.cpp.conf"
         state: link
 
@@ -87,6 +87,65 @@
         name: chainlit-chat
         enabled: yes
 
+    # SillyTavern
+    - name: Install SillyTavern deps
+      community.general.pacman:
+        name:
+          - npm
+        state: present
+
+    - name: Copy SillyTavern sysusers file
+      ansible.builtin.copy:
+        src: files/sillytavern.sysusers
+        dest: /usr/local/lib/sysusers.d/sillytavern.conf
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure SillyTavern user
+      ansible.builtin.systemd:
+        state: restarted
+        name: systemd-sysusers
+    - name: Ensure sillytavern dir
+      ansible.builtin.file:
+        path: /opt/sillytavern
+        owner: sillytavern
+        group: sillytavern
+        mode: 0755
+        state: directory
+    - name: Ensure sillytavern data dir
+      ansible.builtin.file:
+        path: /mnt/data/programs-data/sillytavern
+        owner: sillytavern
+        group: sillytavern
+        mode: 0755
+        state: directory
+    - name: Clone SillyTavern app
+      ansible.builtin.git:
+        repo: 'https://github.com/SillyTavern/SillyTavern.git'
+        dest: /opt/sillytavern/app
+        version: release
+      become_user: sillytavern
+    - name: Copy SillyTavern config file
+      ansible.builtin.copy:
+        src: files/sillytavern.yaml
+        dest: /opt/sillytavern/app/config.yaml
+        owner: sillytavern
+        group: sillytavern
+        mode: '0600'
+    - name: Copy SillyTavern service file
+      ansible.builtin.copy:
+        src: files/sillytavern.service
+        dest: /etc/systemd/system/sillytavern.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure app service is enabled and started
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        state: restarted
+        name: sillytavern
+        enabled: yes
+
 - name: Setup HTTP proxy
   hosts: brighid.xeno
   become: yes
@@ -102,6 +161,18 @@
         regexp: '^#Include\s+conf/extra/llm-chat\.conf'
         insertafter: "Probably not exists"
         line: 'Include conf/extra/llm-chat.conf'
+
+    - name: Copy SillyTavern Apache config
+      ansible.builtin.copy:
+        src: files/http-sillytavern.conf
+        dest: /etc/httpd/conf/extra/sillytavern.conf
+
+    - name: Enable SillyTavern vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/sillytavern\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/sillytavern.conf'
 
     - name: Restart Apache
       ansible.builtin.systemd:
