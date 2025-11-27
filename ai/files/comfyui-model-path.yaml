@@ -3,6 +3,24 @@
 
 sdxl:
     base_path: /mnt/data/models/stable-diffusion/sdxl
+    is_default: false
+    checkpoints: checkpoints/
+    text_encoders: |
+         text_encoders/
+         clip/  # legacy location still supported
+    clip_vision: clip_vision/
+    configs: configs/
+    controlnet: controlnet/
+    diffusion_models: |
+                 diffusion_models
+                 unet
+    embeddings: embeddings/
+    loras: loras/
+    upscale_models: upscale_models/
+    vae: vae/
+
+zimage:
+    base_path: /mnt/data/models/stable-diffusion/zimage
     is_default: true
     checkpoints: checkpoints/
     text_encoders: |

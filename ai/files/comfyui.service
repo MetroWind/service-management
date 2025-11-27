@@ -1,0 +1,15 @@
+[Unit]
+Description=ComfyUI
+After=network.target
+
+[Service]
+Type=simple
+User=comfyui
+Group=comfyui
+WorkingDirectory=/opt/stable-diffusion/comfyui
+ExecStart=/opt/stable-diffusion/env/bin/python /opt/stable-diffusion/comfyui/comfyui/main.py --listen 0.0.0.0 --cpu
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

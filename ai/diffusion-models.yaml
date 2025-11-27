@@ -1,0 +1,53 @@
+---
+- name: Download LLM models
+  hosts: kosmos.xeno
+  become: yes
+  tasks:
+    - name: Ensure z-image model dir
+      ansible.builtin.file:
+        path: /mnt/data/models/stable-diffusion/zimage/checkpoints
+        owner: root
+        group: root
+        mode: 0755
+        state: directory
+    - name: Ensure z-image text encoder dir
+      ansible.builtin.file:
+        path: /mnt/data/models/stable-diffusion/zimage/text_encoders
+        owner: root
+        group: root
+        mode: 0755
+        state: directory
+    - name: Ensure z-image vae dir
+      ansible.builtin.file:
+        path: /mnt/data/models/stable-diffusion/zimage/vae
+        owner: root
+        group: root
+        mode: 0755
+        state: directory
+
+    - name: Download z-image turbo model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - /mnt/data/models/stable-diffusion/zimage/checkpoints/z_image_turbo_bf16.safetensors
+          - https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors
+
+    - name: Download z-image text encoders
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - /mnt/data/models/stable-diffusion/zimage/text_encoders/qwen_3_4b.safetensors
+          - https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors
+
+    - name: Download z-image vae
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - /mnt/data/models/stable-diffusion/zimage/vae/ae.safetensors
+          - https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors

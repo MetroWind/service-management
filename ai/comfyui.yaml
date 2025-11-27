@@ -67,3 +67,16 @@
       ansible.builtin.pip:
         virtualenv: /opt/stable-diffusion/env
         requirements: /opt/stable-diffusion/comfyui/comfyui/requirements.txt
+
+    - name: Copy comfyui service file
+      ansible.builtin.copy:
+        src: files/comfyui.service
+        dest: /etc/systemd/system/comfyui.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure comfyui is started
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        state: restarted
+        name: comfyui
