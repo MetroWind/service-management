@@ -53,7 +53,7 @@ else:
 
 # --- AUTHENTICATION LOGIC ---
 @cl.password_auth_callback
-def auth_callback(username, password):
+def authCallback(username, password):
     """
     Check if username/password matches the dictionary above.
     Returns a User object if valid, None if invalid.
@@ -66,7 +66,7 @@ def auth_callback(username, password):
 
 # --- CHAT LOGIC ---
 
-def extract_urls(text):
+def extractUrls(text):
     """Extracts URLs from a string."""
     url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}')
     urls = url_pattern.findall(text)
@@ -80,7 +80,7 @@ def extract_urls(text):
             pass
     return sanitized_urls
 
-def fetch_webpage_content(url):
+def fetchWebpageContent(url):
     """Fetches and extracts text from a webpage."""
     try:
         response = requests.get(url, timeout=10)
@@ -98,7 +98,7 @@ def fetch_webpage_content(url):
         print(f"Error parsing URL {url}: {e}")
         return None
 
-def summarize_text(text, max_length=20000):
+def summarizeText(text, max_length=20000):
     """Summarizes text if it exceeds a maximum length."""
     if len(text) > max_length:
         return text[:max_length] + "..."
@@ -158,7 +158,7 @@ async def start():
     await cl.Message(content=f"Hello! The AI server is ready.").send()
 
 @cl.on_settings_update
-async def setup_agent(settings):
+async def setupAgent(settings):
     """
     Updates the agent's system prompt based on user settings.
 
@@ -221,11 +221,11 @@ async def main(message: cl.Message):
     content.append({"type": "text", "text": message.content})
 
     # Extract URLs and fetch content
-    urls = extract_urls(message.content)
+    urls = extractUrls(message.content)
     for url in urls:
-        webpage_content = fetch_webpage_content(url)
+        webpage_content = fetchWebpageContent(url)
         if webpage_content:
-            summarized_content = summarize_text(webpage_content)
+            summarized_content = summarizeText(webpage_content)
             content.append({"type": "text", "text": f"Here is the content of the webpage: {url}:\n{summarized_content}"})
 
     message_history.append({"role": "user", "content": content})
