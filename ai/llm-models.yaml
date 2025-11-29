@@ -64,5 +64,5 @@
           - wget
           - "-c"
           - "-O"
-          - "/mnt/data/models/llm/Dolphin-Mistral-24B-Venice-Edition-Q6_K.gguf"
-          - "https://huggingface.co/bartowski/cognitivecomputations_Dolphin-Mistral-24B-Venice-Edition-GGUF/resolve/main/cognitivecomputations_Dolphin-Mistral-24B-Venice-Edition-Q6_K.gguf"
+          - "/mnt/data/models/llm/Dolphin-Mistral-24B-Venice-Edition-Q5_K_M.gguf"
+          - "https://huggingface.co/bartowski/cognitivecomputations_Dolphin-Mistral-24B-Venice-Edition-GGUF/resolve/main/cognitivecomputations_Dolphin-Mistral-24B-Venice-Edition-Q5_K_M.gguf"

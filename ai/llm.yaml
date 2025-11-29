@@ -9,7 +9,7 @@
         dest: "/etc/llama.cpp.d/"
     - name: Link the llama server config for the model to use
       ansible.builtin.file:
-        src: "/etc/llama.cpp.d/gemma3.conf"
+        src: "/etc/llama.cpp.d/mistral-venice-edition.conf"
         dest: "/etc/llama.cpp.conf"
         state: link
 
