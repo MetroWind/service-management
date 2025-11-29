@@ -40,6 +40,12 @@
         state: restarted
         name: systemd-sysusers
 
+    - name: Install chat deps
+      community.general.pacman:
+        name:
+          - pandoc
+        state: present
+
     - name: Create venv
       ansible.builtin.pip:
         name:
@@ -124,6 +130,7 @@
         repo: 'https://github.com/SillyTavern/SillyTavern.git'
         dest: /opt/sillytavern/app
         version: release
+        force: yes
       become_user: sillytavern
     - name: Copy SillyTavern config file
       ansible.builtin.copy:

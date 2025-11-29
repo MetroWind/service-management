@@ -3,11 +3,11 @@ import base64
 import tomllib
 import re
 from urllib.parse import urlparse, urlunparse
+import subprocess
 
 import chainlit as cl
 from openai import AsyncOpenAI
 import requests
-from bs4 import BeautifulSoup
 
 LLAMA_API_URL = "http://localhost:8080/v1"
 CREDENTIALS_FILE = "credentials.toml"
@@ -68,10 +68,12 @@ def authCallback(username, password):
 
 def extractUrls(text):
     """Extracts URLs from a string."""
-    url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}')
-    urls = url_pattern.findall(text)
+    url_pattern = re.compile(r'(https?://)([-\w]+(?:\.\w[-\w]*)+)(:\d+)?(/[^.!,?"<>\[\]{}\s\x7F-\xFF]*(?:[.!,?]+[^.!,?"<>\[\]{}\s\x7F-\xFF]+)*)?')
+    urls = url_pattern.finditer(text)
     sanitized_urls = []
-    for url in urls:
+    for url_match in urls:
+        url = url_match.group(0)
+        print("User referenced URL", url)
         try:
             result = urlparse(url)
             sanitized_url = urlunparse(result)
@@ -83,19 +85,21 @@ def extractUrls(text):
 def fetchWebpageContent(url):
     """Fetches and extracts text from a webpage."""
     try:
+        # Download the webpage content
         response = requests.get(url, timeout=10)
         response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
-        # Extract text from the body, excluding scripts and styles.
-        for script in soup(["script", "style"]):
-            script.decompose()
-        text = soup.get_text()
-        return text
+        proc = subprocess.Popen(
+            ["pandoc", "-f", "html", "-t", "plain"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        (output, _) = proc.communicate(response.content, 20)
+        if proc.returncode != 0:
+            print(f"Error processing URL {url}: pandoc returned {proc.returncode}.")
+        return output.decode()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching URL {url}: {e}")
         return None
     except Exception as e:
-        print(f"Error parsing URL {url}: {e}")
+        print(f"Error processing URL {url}: {e}")
         return None
 
 def summarizeText(text, max_length=20000):
@@ -103,7 +107,6 @@ def summarizeText(text, max_length=20000):
     if len(text) > max_length:
         return text[:max_length] + "..."
     return text
-
 
 @cl.on_chat_start
 async def start():
