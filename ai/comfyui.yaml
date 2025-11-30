@@ -80,3 +80,30 @@
         daemon_reload: yes
         state: restarted
         name: comfyui
+        enabled: yes
+
+
+# Reverse proxy doesn’t work right on comfyui right now. See
+# https://github.com/Comfy-Org/ComfyUI_frontend/issues/5479
+#
+# - name: Setup HTTP proxy
+#   hosts: brighid.xeno
+#   become: yes
+#   tasks:
+#     - name: Copy Apache config
+#       ansible.builtin.copy:
+#         src: files/http-comfyui.conf
+#         dest: /etc/httpd/conf/extra/comfyui.conf
+
+#     - name: Enable vhost
+#       ansible.builtin.lineinfile:
+#         path: /etc/httpd/conf/httpd.conf
+#         regexp: '^#Include\s+conf/extra/comfyui\.conf'
+#         insertafter: "Probably not exists"
+#         line: 'Include conf/extra/comfyui.conf'
+
+#     - name: Restart Apache
+#       ansible.builtin.systemd:
+#         state: restarted
+#         name: httpd
+#         enabled: yes
