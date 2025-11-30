@@ -4,6 +4,7 @@ import tomllib
 import re
 from urllib.parse import urlparse, urlunparse
 import subprocess
+import datetime
 
 import chainlit as cl
 from openai import AsyncOpenAI
@@ -50,6 +51,24 @@ if SYS_PROMPT_PRESETS:
     DEFAULT_PRESET_NAME = min(SYS_PROMPT_PRESETS.keys())
 else:
     DEFAULT_PRESET_NAME = None
+
+def timeStr():
+    """Returns a string that represents the current date, time, and server
+    timezone."""
+    t = datetime.datetime.now(datetime.timezone.utc)
+    return (f"<meta>Current UTC time is {t.isoformat()}. "
+            f"Your time zone is {t.astimezone().tzinfo}</meta>")
+
+def buildSysPrompt(raw_sys_prompt):
+    """Returns the content list of system prompt, given a system prompt as a
+    string."""
+    return [{"type": "text", "text": raw_sys_prompt},
+            {"type": "text", "text": timeStr()},]
+
+def updateSysPrompt(full_prompt):
+    """Update the current time in the system prompt, which should be the first
+    element of full_prompt."""
+    full_prompt[0]["content"][1]["text"] = timeStr()
 
 # --- AUTHENTICATION LOGIC ---
 @cl.password_auth_callback
@@ -154,7 +173,8 @@ async def start():
 
     cl.user_session.set("settings", settings)
     message_history = []
-    message_history.append({"role": "system", "content": default_prompt})
+    message_history.append({"role": "system",
+                            "content": buildSysPrompt(default_prompt)})
     cl.user_session.set("message_history", message_history)
 
     # Send a welcome message
@@ -193,7 +213,8 @@ async def setupAgent(settings):
     # Update History
     message_history = cl.user_session.get("message_history")
     if message_history:
-        message_history[0] = {"role": "system", "content": new_prompt}
+        message_history[0] = {"role": "system",
+                              "content": buildPrompt(new_prompt)}
 
     # Update Session
     cl.user_session.set("settings", settings)
@@ -221,7 +242,7 @@ async def main(message: cl.Message):
                         base64.b64encode(image_file.read()).decode('utf-8')
                 content.append({"type": "image_url", "image_url": {
                     "url": f"data:{element.mime};base64,{base64_image}"}})
-    content.append({"type": "text", "text": message.content})
+    content.append({"type": "text", "text": message.content })
 
     # Extract URLs and fetch content
     urls = extractUrls(message.content)
@@ -252,4 +273,5 @@ async def main(message: cl.Message):
     await msg.update()
 
     message_history.append({"role": "assistant", "content": full_response_text})
+    updateSysPrompt(message_history)
     cl.user_session.set("message_history", message_history)
