@@ -214,7 +214,7 @@ async def setupAgent(settings):
     message_history = cl.user_session.get("message_history")
     if message_history:
         message_history[0] = {"role": "system",
-                              "content": buildPrompt(new_prompt)}
+                              "content": buildSysPrompt(new_prompt)}
 
     # Update Session
     cl.user_session.set("settings", settings)
