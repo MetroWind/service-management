@@ -1,0 +1,50 @@
+[Unit]
+Description=LLM Model Switcher Web App
+After=network.target
+
+[Service]
+Type=simple
+# This service requires root privileges to modify /etc symlinks and restart the llama.cpp service
+User=root
+# Update this path to the actual location of the model-switcher directory
+WorkingDirectory=/opt/llm/model-switcher
+# Update the python path if necessary.
+# Added --host 0.0.0.0 to make it accessible from other machines if needed,
+# or keep default (127.0.0.1) and use a reverse proxy.
+ExecStart=/usr/bin/python3 main.py --host 0.0.0.0 --port 7330
+Restart=always
+RestartSec=5
+
+# --- Security & Sandboxing ---
+
+# Hide user home directories
+ProtectHome=yes
+
+# Use a private /tmp and /var/tmp
+PrivateTmp=yes
+
+# Mount /usr, /boot, and /etc as read-only
+ProtectSystem=yes
+
+# EXCEPTION: Allow writing to /etc because the script needs to update
+# the symlink at /etc/llama.cpp.conf.
+# (If the symlink were in a subdirectory, we could restrict this further)
+ReadWritePaths=/etc
+
+# Prevent modifying kernel variables
+ProtectKernelTunables=yes
+
+# Prevent accessing control groups
+ProtectControlGroups=yes
+
+# Prevent loading new kernel modules
+ProtectKernelModules=yes
+
+# Prevent changing the hostname
+ProtectHostname=yes
+
+# Restrict networking to IPv4/IPv6 and Unix Sockets (needed for systemd/journald communication)
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

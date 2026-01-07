@@ -93,6 +93,37 @@
         name: chainlit-chat
         enabled: yes
 
+    # Model switcher
+    - name: Clone model switcher
+      ansible.builtin.git:
+        repo: 'https://git.xeno.darksair.org/small-tools-py.git'
+        dest: /tmp/small-tools-py
+        force: yes
+    - name: Move model switcher to the correct dir
+      ansible.builtin.copy:
+        src: "/tmp/small-tools-py/model-switcher"
+        dest: "/opt/llm/"
+        remote_src: yes
+        owner: root
+        group: root
+    - name: Copy service file
+      ansible.builtin.copy:
+        src: files/llm-model-switcher.service
+        dest: /etc/systemd/system/llm-model-switcher.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure app service is enabled and started
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        state: restarted
+        name: llm-model-switcher
+        enabled: yes
+    - name: Remove tmp dir
+      ansible.builtin.file:
+        path: /tmp/small-tools-py
+        state: absent
+
     # SillyTavern
     - name: Install SillyTavern deps
       community.general.pacman:

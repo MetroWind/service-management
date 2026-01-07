@@ -68,6 +68,7 @@
         virtualenv: /opt/stable-diffusion/env
         requirements: /opt/stable-diffusion/comfyui/comfyui/requirements.txt
 
+    # For some reason this always get stuck...
     - name: Install RMBG dependencies
       ansible.builtin.command: "xargs -n 1 /opt/stable-diffusion/env/bin/pip install < /opt/stable-diffusion/comfyui/comfyui/custom_nodes/ComfyUI-RMBG/requirements.txt"
 
@@ -84,7 +85,6 @@
         state: restarted
         name: comfyui
         enabled: yes
-
 
 # Reverse proxy doesn’t work right on comfyui right now. See
 # https://github.com/Comfy-Org/ComfyUI_frontend/issues/5479
