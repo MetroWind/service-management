@@ -1,0 +1,24 @@
+- name: Deploy scoundrel-web
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Git checkout
+      ansible.builtin.git:
+        repo: 'https://git.xeno.darksair.org/scoundrel-web.git'
+        dest: /tmp/scoundrel-web
+
+    - name: Copy scoundrel-web to hosting dir
+      ansible.builtin.copy:
+        src: /tmp/scoundrel-web/
+        dest: /srv/http/root/scoundrel/
+        remote_src: yes
+
+    - name: Remove git metadata
+      ansible.builtin.file:
+        path: "/srv/http/root/.git"
+        state: absent
+
+    - name: Remove tmp dir
+      ansible.builtin.file:
+        path: /tmp/scoundrel-web
+        state: absent
