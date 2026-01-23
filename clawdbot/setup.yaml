@@ -1,0 +1,71 @@
+---
+- name: Setup Clawdbot
+  hosts: kosmos.xeno
+  become: yes
+  tasks:
+    - name: Install deps
+      community.general.pacman:
+        name:
+          - npm
+          - go
+        state: present
+    - name: Copy sysusers file
+      ansible.builtin.copy:
+        src: clawdbot.sysusers
+        dest: /usr/local/lib/sysusers.d/clawdbot.conf
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure user
+      ansible.builtin.systemd:
+        state: restarted
+        name: systemd-sysusers
+    - name: Create clawdbot dir
+      ansible.builtin.file:
+        path: /opt/clawdbot
+        owner: clawdbot
+        group: clawdbot
+        state: directory
+        mode: '0755'
+    - name: Create clawdbot app dir
+      ansible.builtin.file:
+        path: /opt/clawdbot/clawdbot
+        owner: clawdbot
+        group: clawdbot
+        state: directory
+        mode: '0755'
+    - name: Install clawdbot
+      become: yes
+      become_user: clawdbot
+      ansible.builtin.command:
+        chdir: /opt/clawdbot/clawdbot
+        argv:
+          - npm
+          - install
+          - clawdbot
+    - name: Link executable
+      ansible.builtin.file:
+        src: "/opt/clawdbot/clawdbot/node_modules/.bin/clawdbot"
+        dest: /usr/local/bin/clawdbot
+        state: link
+    - name: Run setup
+      become: yes
+      become_user: clawdbot
+      ansible.builtin.command:
+        chdir: /opt/clawdbot
+        argv:
+          - clawdbot
+          - setup
+    - name: Copy Clawdbot service file
+      ansible.builtin.copy:
+        src: clawdbot.service
+        dest: /etc/systemd/system/clawdbot.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Ensure app service is enabled and started
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        state: restarted
+        name: clawdbot
+        enabled: yes
