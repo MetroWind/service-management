@@ -1,131 +1,100 @@
-- name: Install Gitolite
-  hosts: brighid.xeno
-  become: yes
+- name: Build package
+  hosts: amalthus.xeno
+  vars:
+    pkg: baregit
   tasks:
-    - name: Install package
-      community.general.pacman:
-        name: gitolite
-        state: present
+    - name: Download source
+      ansible.builtin.git:
+        repo: "https://github.com/MetroWind/{{ pkg }}"
+        dest: "~/pkgs/{{ pkg }}"
 
-    - name: Copy admin pubkey
-      ansible.builtin.copy:
-        src: /home/mw/.ssh/id_ed25519.pub
-        dest: /tmp/mw.pub
-        owner: gitolite
-        group: gitolite
-
-    - name: Setup account
-      become: yes
-      become_user: gitolite
+    - name: Build package
       ansible.builtin.command:
-        cmd: "gitolite setup -pk /tmp/mw.pub"
+        cmd: "makepkg -sr --noconfirm -f"
+        chdir: "/home/user/pkgs/{{ pkg }}/packages/arch"
+        creates: "/home/user/pkgs/{{ pkg }}/packages/arch{{ pkg }}-git-*-any.pkg.tar.zst"
 
-    - name: Copy gitolite rc file
-      ansible.builtin.copy:
-        src: gitolite.rc
-        dest: "/var/lib/gitolite/.gitolite.rc"
-        owner: gitolite
-        group: gitolite
-        mode: 0600
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 {{ pkg }}-*-any.pkg.tar.zst | head -n1"
+        chdir: "/home/user/pkgs/{{ pkg }}/packages/arch"
 
-    - name: Remove pubkey
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "/home/user/pkgs/{{ pkg }}/packages/arch/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
       ansible.builtin.file:
-        path: /tmp/mw.pub
+        path: "/home/user/pkgs/{{ pkg }}"
         state: absent
 
-    - name: Add the http user to the gitolite group
-      ansible.builtin.user:
-        name: http
-        groups: gitolite
-        append: yes
-
-    - name: Change default file permission
-      ansible.builtin.replace:
-        path: /var/lib/gitolite/.gitolite.rc
-        regexp: '^\$UMASK *=.*'
-        replace: '$UMASK = 0027'
-
-    - name: Change dir permission
-      ansible.builtin.command:
-        cmd: "chmod g+rX /var/lib/gitolite"
-
-    - name: Change dir permission
-      ansible.builtin.command:
-        cmd: "chmod -R g+rX /var/lib/gitolite/repositories"
-
-    - name: Let git ignore ownership mismatch
-      ansible.builtin.command:
-        cmd: "git config --system safe.directory '*'"
-
-    - name: Create dir for passwd file
-      ansible.builtin.file:
-        path: /srv/http-git
-        state: directory
-        group: gitolite
-        owner: gitolite
-        mode: '0755'
-
-    - name: Create passwd file for HTTP push
-      ansible.builtin.file:
-        path: /srv/http-git/htpasswd
-        state: touch
-        group: http
-        owner: gitolite
-        mode: 0640
-
-    - name: Copy backend wrapper
-      ansible.builtin.copy:
-        src: backend-wrapper.sh
-        dest: /srv/http-git/backend-wrapper.sh
-        group: gitolite
-        owner: gitolite
-        mode: 0755
-
-    - name: Copy cgit wrapper
-      ansible.builtin.copy:
-        src: cgit-wrapper.sh
-        dest: /srv/http-git/cgit-wrapper.sh
-        group: gitolite
-        owner: gitolite
-        mode: 0755
-
-- name: Install cgit
+- name: Deploy
   hosts: brighid.xeno
   become: yes
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+    client_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          66326362393937386561343039613733303363616338343563333531623863373332313732336564
+          6231343564353537343739303237643165346663626434370a663736346264393036353934356635
+          31383065383861623733303633383836646333656463316131396634333164363430623336353936
+          6664313863343735360a363232323763376162363333366331643131663165383739666262326137
+          33613634333834623362663664613035353130623730333062653462333138663636306566636162
+          6639613135313462393736393738313436383236383733333231
   tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
     - name: Install package
       community.general.pacman:
-        name:
-          - cgit
-          - python-pygments
-          - python-markdown
+        name: "/tmp/{{ package_file }}"
         state: present
 
-    - name: Copy cgit config
-      ansible.builtin.copy:
-        src: cgitrc
-        dest: /etc/cgitrc
-
-    - name: Copy root readme
-      ansible.builtin.copy:
-        src: cgit-about.html
-        dest: /srv/http-git/README.html
-        mode: 0644
+    - name: Copy config
+      ansible.builtin.template:
+        src: baregit.ini
+        dest: /etc/baregit.ini
+        group: baregit
+        owner: baregit
+        mode: 0600
 
     - name: Copy Apache config
       ansible.builtin.copy:
         src: httpd.conf
-        dest: /etc/httpd/conf/extra/cgit.conf
+        dest: /etc/httpd/conf/extra/git.conf
 
     - name: Enable vhost
       ansible.builtin.lineinfile:
         path: /etc/httpd/conf/httpd.conf
-        regexp: '^#Include\s+conf/extra/cgit\.conf'
+        regexp: '^#Include\s+conf/extra/git\.conf'
         insertafter: "Probably not exists"
-        line: 'Include conf/extra/cgit.conf'
+        line: 'Include conf/extra/git.conf'
 
     - name: Restart Apache
       ansible.builtin.systemd:
         state: restarted
         name: httpd
         enabled: yes
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: baregit
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/{{ package_file }}"
+        state: absent
