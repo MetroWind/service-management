@@ -35,6 +35,24 @@
           - /mnt/data/models/llm/gemma-3-mmproj-BF16.gguf
           - https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/resolve/main/mmproj-BF16.gguf
 
+    - name: Download gemma 3 uncensored model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/mlabonne_gemma-3-27b-it-abliterated-IQ4_NL.gguf"
+          - "https://huggingface.co/bartowski/mlabonne_gemma-3-27b-it-abliterated-GGUF/resolve/main/mlabonne_gemma-3-27b-it-abliterated-IQ4_NL.gguf"
+
+    - name: Download gemma 3 uncensored mmproj
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/mlabonne_gemma-3-abliterated-mmproj-f16.gguf"
+          - "https://huggingface.co/bartowski/mlabonne_gemma-3-27b-it-abliterated-GGUF/resolve/main/mmproj-mlabonne_gemma-3-27b-it-abliterated-f16.gguf"
+
     - name: Download Qwen3 Coder model
       ansible.builtin.command:
         argv:
@@ -49,15 +67,6 @@
         url: https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/template
         dest: /mnt/data/models/llm/qwen3-coder.jinja
 
-    - name: Download llama 3.2 18B uncensored model
-      ansible.builtin.command:
-        argv:
-          - wget
-          - "-c"
-          - "-O"
-          - "/mnt/data/models/llm/L3.2-8X3B-MOE-Dark-Champion-Inst-18.4B-uncen-ablit_D_AU-Q8_0.gguf"
-          - "https://huggingface.co/DavidAU/Llama-3.2-8X3B-MOE-Dark-Champion-Instruct-uncensored-abliterated-18.4B-GGUF/resolve/main/L3.2-8X3B-MOE-Dark-Champion-Inst-18.4B-uncen-ablit_D_AU-Q8_0.gguf"
-
     - name: Download Mistral 24B uncensored model
       ansible.builtin.command:
         argv:
@@ -66,3 +75,30 @@
           - "-O"
           - "/mnt/data/models/llm/Dolphin-Mistral-24B-Venice-Edition-Q5_K_M.gguf"
           - "https://huggingface.co/bartowski/cognitivecomputations_Dolphin-Mistral-24B-Venice-Edition-GGUF/resolve/main/cognitivecomputations_Dolphin-Mistral-24B-Venice-Edition-Q5_K_M.gguf"
+
+    - name: Download Devstral 24B model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/Devstral-Small-2-24B-Instruct-2512-IQ4_NL.gguf"
+          - "https://huggingface.co/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/resolve/main/Devstral-Small-2-24B-Instruct-2512-IQ4_NL.gguf"
+
+    - name: Download Devstral mmproj
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/Devstral-Small-2-mmproj-f16.gguf"
+          - "https://huggingface.co/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/resolve/main/mmproj-F16.gguf"
+
+    - name: Download Olmo 3.1 32B model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/Olmo-3.1-32B-Instruct-IQ4_NL.gguf"
+          - "https://huggingface.co/unsloth/Olmo-3.1-32B-Instruct-GGUF/resolve/main/Olmo-3.1-32B-Instruct-IQ4_NL.gguf"
