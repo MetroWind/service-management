@@ -102,3 +102,12 @@
           - "-O"
           - "/mnt/data/models/llm/Olmo-3.1-32B-Instruct-IQ4_NL.gguf"
           - "https://huggingface.co/unsloth/Olmo-3.1-32B-Instruct-GGUF/resolve/main/Olmo-3.1-32B-Instruct-IQ4_NL.gguf"
+
+    - name: Download GLM 4.7 Flash model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/GLM-4.7-Flash-IQ4_NL.gguf"
+          - "https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF/resolve/main/GLM-4.7-Flash-IQ4_NL.gguf"
