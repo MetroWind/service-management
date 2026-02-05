@@ -15,6 +15,7 @@
           - python-pip
           - python-virtualenv
           - python-setuptools
+          - uv
         state: present
 
     - name: Enable parallel compile
@@ -25,3 +26,9 @@
         owner: root
         group: root
         mode: '0644'
+
+    - name: Create a directory for uv to install python
+      ansible.builtin.file:
+        path: /opt/python
+        state: directory
+        mode: '0755'

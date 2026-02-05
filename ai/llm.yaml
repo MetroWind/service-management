@@ -46,14 +46,39 @@
           - pandoc
         state: present
 
+    - name: Install Python 3.13
+      ansible.builtin.command:
+        argv:
+          - uv
+          - python
+          - install
+          - "3.13"
+      environment:
+        UV_PYTHON_INSTALL_DIR: /opt/python
+
     - name: Create venv
-      ansible.builtin.pip:
-        name:
+      ansible.builtin.command:
+        argv:
+          - uv
+          - venv
+          - "--python"
+          - "3.13"
+          - /opt/llm/env
+      environment:
+        UV_PYTHON_INSTALL_DIR: /opt/python
+
+    - name: Install deps
+      ansible.builtin.command:
+        argv:
+          - uv
+          - pip
+          - install
+          - "--python"
+          - /opt/llm/env/bin/python
           - openai
           - chainlit
           - beautifulsoup4
           - requests
-        virtualenv: "/opt/llm/env"
 
     - name: Ensure app home dir
       ansible.builtin.file:
