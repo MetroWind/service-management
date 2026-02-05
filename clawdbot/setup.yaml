@@ -42,20 +42,12 @@
         argv:
           - npm
           - install
-          - clawdbot
+          - openclaw
     - name: Link executable
       ansible.builtin.file:
-        src: "/opt/clawdbot/clawdbot/node_modules/.bin/clawdbot"
-        dest: /usr/local/bin/clawdbot
+        src: "/opt/clawdbot/clawdbot/node_modules/.bin/openclaw"
+        dest: /usr/local/bin/openclaw
         state: link
-    - name: Run setup
-      become: yes
-      become_user: clawdbot
-      ansible.builtin.command:
-        chdir: /opt/clawdbot
-        argv:
-          - clawdbot
-          - setup
     - name: Copy Clawdbot service file
       ansible.builtin.copy:
         src: clawdbot.service
