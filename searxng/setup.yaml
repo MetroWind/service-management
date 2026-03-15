@@ -1,0 +1,154 @@
+# SearXNG seems to probe for all engines after starting. This would
+# take some time, during which the server will not respond.
+- name: Build packages
+  hosts: amalthus.xeno
+  tasks:
+    - name: Download PKGBUILD
+      ansible.builtin.unarchive:
+        src: "https://aur.archlinux.org/cgit/aur.git/snapshot/python-msgspec.tar.gz"
+        dest: "~/pkgs"
+        remote_src: yes
+    - name: Install build dependency
+      become: yes
+      community.general.pacman:
+        name: debugedit
+        state: present
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/python-msgspec"
+        creates: "~/pkgs/python-msgspec/python-msgspec-*.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 python-msgspec-*.pkg.tar.zst | grep -v debug"
+        chdir: "~/pkgs/python-msgspec"
+
+    - set_fact:
+        package_file_python_msgspec: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file_python_msgspec }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/python-msgspec/{{ package_file_python_msgspec }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Install
+      become: yes
+      community.general.pacman:
+        name: "pkgs/python-msgspec/{{ package_file_python_msgspec }}"
+        state: present
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "~/pkgs/python-msgspec"
+        state: absent
+
+    - name: Download searxng PKGBUILD
+      ansible.builtin.unarchive:
+        src: "https://aur.archlinux.org/cgit/aur.git/snapshot/searxng-git.tar.gz"
+        dest: "~/pkgs"
+        remote_src: yes
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/searxng-git"
+        creates: "~/pkgs/searxng-git/searxng-git-*.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 searxng-git-*.pkg.tar.zst | grep -v debug"
+        chdir: "~/pkgs/searxng-git"
+
+    - set_fact:
+        package_file_searxng_git: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file_searxng_git }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/searxng-git/{{ package_file_searxng_git }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "~/pkgs/searxng-git"
+        state: absent
+
+    - name: Unisntall dependency
+      become: yes
+      community.general.pacman:
+        name: python_msgspec
+        state: absent
+        extra_args: --recursive
+
+
+- name: Deploy SearXNG
+  hosts: brighid.xeno
+  become: yes
+  vars:
+    package_files:
+      - "{{ hostvars['amalthus.xeno']['package_file_python_msgspec'] }}"
+      - "{{ hostvars['amalthus.xeno']['package_file_searxng_git'] }}"
+    secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62376233386362623231363362653163313638386563323463363432343263643161356239323930
+          3361613536343531323431386431396436626138666662380a373830636463636261316132353033
+          31663438626166343761373534613464336237316162313732316134643938353662643766326664
+          6531316563623938610a376432343135303964656136613762356265643466303836373763633966
+          33323434373863643638386338336164633036326364656131663033636464356137373037373734
+          6432363031616230353565383562636638663738343263613131
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ item }}"
+        dest: /tmp/
+      loop: "{{ package_files }}"
+
+    - name: Install packages
+      community.general.pacman:
+        name: "{{ ['/tmp/'] | product(package_files) | map('join') | list }}"
+        state: present
+
+    - name: Remove package files
+      ansible.builtin.file:
+        path: "/tmp/{{ item }}"
+        state: absent
+      loop: "{{ package_files }}"
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: settings.yaml
+        dest: /etc/searxng/settings.yml
+
+    - name: Make sure server is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: searxng
+        enabled: yes
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/searxng.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/searxng\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/searxng.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes

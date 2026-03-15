@@ -1,0 +1,24 @@
+use_default_settings: true
+general:
+  instance_name: "MetroWind’s Search Engine"
+server:
+  base_url: https://search.xeno.darksair.org  # change this!
+  port: 45450
+  bind_address: "127.0.0.1"
+  secret_key: "{{ secret }}"  # change this!
+outgoing:
+  request_timeout: 10.0
+search:
+  autocomplete: "google"
+  formats:
+    - html
+    - json
+checker:
+  scheduling:
+    start_after: [300, 1800]  # delay to start the first run of the checker
+    every: [86400, 90000]     # how often the checker runs
+engines:
+  - name: bilibili
+    engine: bilibili
+    shortcut: bil
+    disabled: false
