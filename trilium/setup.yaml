@@ -20,7 +20,7 @@
     - name: What package did I build?
       register: package_file_proc
       ansible.builtin.shell:
-        cmd: "ls -1 {{ package }}-*-x86_64.pkg.tar.zst"
+        cmd: "ls -1 {{ package }}-*-x86_64.pkg.tar.zst | grep -v debug"
         chdir: "/home/user/pkgs/{{ package }}"
 
     - set_fact:
