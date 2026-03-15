@@ -1,0 +1,27 @@
+# Server Configuration
+
+# The public URL of the server (without trailing slash)
+server_url_root: "https://f.mws.rocks"
+
+# Port to listen on
+port: 41189
+
+# Directory for data (database, uploads, templates)
+# Defaults to current directory if not set
+data_dir: "/var/lib/unspoken"
+
+# Number of posts to show per page in timeline and profile
+posts_per_page: 20
+
+# OpenID Connect Configuration (for login)
+oidc_issuer_url: "https://auth.xeno.darksair.org/realms/xeno"
+oidc_client_id: "unspoken"
+oidc_secret: "{{ client_id }}"
+
+# Secret key for session signing (Generate a long random string)
+secret_key: "PNPcC349gQ0RjrQ8P3sCykmwlJGpwqzG"
+
+# NodeInfo Metadata
+nodeinfo:
+  name: "Unspoken Microblog"
+  description: "A C++ ActivityPub Server"

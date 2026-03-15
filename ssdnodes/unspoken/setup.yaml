@@ -1,0 +1,58 @@
+- name: Deploy Unspoken
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    client_id: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          31383837356135373730393862666139343164646361623637303430663632393433653530336335
+          3237396134346163363736366662623031383732613234300a396264306466613939303132356666
+          64393963323338343265333566363135623739303037396564663138343665383730323631343166
+          3537333633646663300a623864343162326638376636616563363464666335363637346431643866
+          36333262346466346138386266373636663263363235343536626466373264313134336635346334
+          3531383537633161646463643962393034663530376532633763
+  tasks:
+    - name: Download package
+      ansible.builtin.get_url:
+        url: https://github.com/MetroWind/unspoken/releases/latest/download/unspoken-git.pkg.tar.zst
+        dest: /tmp/unspoken-git.pkg.tar.zst
+
+    - name: Install package
+      ansible.builtin.command:
+        cmd: pacman -U --noconfirm /tmp/unspoken-git.pkg.tar.zst
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/unspoken-git.pkg.tar.zst
+        state: absent
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/unspoken.yaml
+        owner: unspoken
+        group: unspoken
+        mode: 0600
+
+    - name: Restart server
+      ansible.builtin.systemd:
+        state: restarted
+        name: unspoken
+        enabled: yes
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/unspoken.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/unspoken\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/unspoken.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
