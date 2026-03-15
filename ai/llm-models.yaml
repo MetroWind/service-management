@@ -17,24 +17,6 @@
         url: "https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506/resolve/main/chat_template.jinja"
         dest: /mnt/data/models/llm/Mistral-Small-3.2-24B-Instruct-2506.jinja
 
-    - name: Download gemma 3 model
-      ansible.builtin.command:
-        argv:
-          - wget
-          - "-c"
-          - "-O"
-          - /mnt/data/models/llm/gemma-3-27b-it-Q5_K_M.gguf
-          - "https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/resolve/main/gemma-3-27b-it-Q5_K_M.gguf"
-
-    - name: Download gemma 3 mmproj
-      ansible.builtin.command:
-        argv:
-          - wget
-          - "-c"
-          - "-O"
-          - /mnt/data/models/llm/gemma-3-mmproj-BF16.gguf
-          - https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/resolve/main/mmproj-BF16.gguf
-
     - name: Download gemma 3 uncensored model
       ansible.builtin.command:
         argv:
@@ -52,20 +34,6 @@
           - "-O"
           - "/mnt/data/models/llm/mlabonne_gemma-3-abliterated-mmproj-f16.gguf"
           - "https://huggingface.co/bartowski/mlabonne_gemma-3-27b-it-abliterated-GGUF/resolve/main/mmproj-mlabonne_gemma-3-27b-it-abliterated-f16.gguf"
-
-    - name: Download Qwen3 Coder model
-      ansible.builtin.command:
-        argv:
-          - wget
-          - "-c"
-          - "-O"
-          - /mnt/data/models/llm/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf
-          - "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
-
-    - name: Download Qwen3 Coder model
-      ansible.builtin.get_url:
-        url: https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/template
-        dest: /mnt/data/models/llm/qwen3-coder.jinja
 
     - name: Download Mistral 24B uncensored model
       ansible.builtin.command:
@@ -94,15 +62,6 @@
           - "/mnt/data/models/llm/Devstral-Small-2-mmproj-f16.gguf"
           - "https://huggingface.co/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/resolve/main/mmproj-F16.gguf"
 
-    - name: Download Olmo 3.1 32B model
-      ansible.builtin.command:
-        argv:
-          - wget
-          - "-c"
-          - "-O"
-          - "/mnt/data/models/llm/Olmo-3.1-32B-Instruct-IQ4_NL.gguf"
-          - "https://huggingface.co/unsloth/Olmo-3.1-32B-Instruct-GGUF/resolve/main/Olmo-3.1-32B-Instruct-IQ4_NL.gguf"
-
     - name: Download GLM 4.7 Flash model
       ansible.builtin.command:
         argv:
@@ -111,3 +70,21 @@
           - "-O"
           - "/mnt/data/models/llm/GLM-4.7-Flash-IQ4_NL.gguf"
           - "https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF/resolve/main/GLM-4.7-Flash-IQ4_NL.gguf"
+
+    - name: Download qwen3.5 27B abliterated model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/Huihui-Qwen3.5-27B-abliterated.Q4_K_M.gguf"
+          - "https://huggingface.co/mradermacher/Huihui-Qwen3.5-27B-abliterated-GGUF/resolve/main/Huihui-Qwen3.5-27B-abliterated.Q4_K_M.gguf"
+
+    - name: Download qwen3.5 27B abliterated mmproj
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/Huihui-Qwen3.5-27B-abliterated.mmproj-f16.gguf"
+          - "https://huggingface.co/mradermacher/Huihui-Qwen3.5-27B-abliterated-GGUF/resolve/main/Huihui-Qwen3.5-27B-abliterated.mmproj-f16.gguf"

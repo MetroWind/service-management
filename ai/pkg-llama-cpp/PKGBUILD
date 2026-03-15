@@ -12,7 +12,6 @@ provides=("${pkgname%-git}")
 conflicts=("${pkgname%-git}" libggml ggml)
 replaces=()
 backup=("etc/llama.cpp.conf")
-# Stripping doesn’t work with ryml.
 options=(!debug)
 source=('git+https://github.com/ggml-org/llama.cpp.git' "sysusers-${pkgname%-git}.conf"
         "${pkgname%-git}.service" "${pkgname%-git}.conf")
