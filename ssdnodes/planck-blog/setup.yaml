@@ -1,60 +1,32 @@
-- name: Build Planck
-  hosts: amalthus.xeno
-  tasks:
-    - name: Download source
-      ansible.builtin.git:
-        repo: https://github.com/MetroWind/planck-blog.git
-        dest: ~/pkgs/planck
-
-    - name: Build package
-      ansible.builtin.command:
-        cmd: makepkg -sr --noconfirm -f
-        chdir: "~/pkgs/planck/packages/arch"
-        creates: "~/pkgs/planck/packages/arch/planck-blog-git-*-x86_64.pkg.tar.zst"
-
-    - name: What package did I build?
-      register: package_file_proc
-      ansible.builtin.shell:
-        cmd: "ls -1 planck-blog-git-*-x86_64.pkg.tar.zst | fgrep -v debug"
-        chdir: "~/pkgs/planck/packages/arch"
-
-    - set_fact:
-        package_file: "{{ package_file_proc.stdout }}"
-
-    - debug:
-        msg: "Built package {{ package_file }}"
-
-    - name: Fetch package to local
-      ansible.builtin.fetch:
-        src: "~/pkgs/planck/packages/arch/{{ package_file }}"
-        dest: /tmp/
-        flat: yes
-
-    - name: Remove build files
-      ansible.builtin.file:
-        path: ~/pkgs/planck
-        state: absent
-
-- name: Build Planck
+- name: Deploy Planck
   hosts: ssh.mws.rocks
   become: yes
   vars:
-    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
     iosevka_version: "31.7.1"
-  vars_prompt:
-    - name: client_secret
-      prompt: Client secret
+    client_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63343764356535393735306364616163356638616633383838383230383166333138663866386530
+          3535303236343039613366363736373866323061306561330a333965646466303665633961366436
+          61653338383732323138396564333035323439633866346638653437333865383635666335333833
+          3166343835363536390a323865393437616133653436646465386136376135643866323636663939
+          38323537346465626337353566663038363863313361323138396337633035303866326533313832
+          3239306464316165393239666635373739346363656666393038
   tasks:
-    - name: Copy package to remote
-      ansible.builtin.copy:
-        src: "/tmp/{{ package_file }}"
-        dest: /tmp/
+    - name: Download package
+      ansible.builtin.get_url:
+        url: "https://github.com/MetroWind/planck-blog/releases/latest/download/planck-blog-git-archlinux-x86_64.pkg.tar.zst"
+        dest: "/tmp/planck-blog-git-archlinux-x86_64.pkg.tar.zst"
 
     - name: Install package
       community.general.pacman:
         name:
-          - "/tmp/{{ package_file }}"
+          - "/tmp/planck-blog-git-archlinux-x86_64.pkg.tar.zst"
         state: present
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/planck-blog-git-archlinux-x86_64.pkg.tar.zst"
+        state: absent
 
     - name: Create directory for monospace font
       ansible.builtin.file:
@@ -120,8 +92,3 @@
         name: planck-blog
         enabled: yes
         daemon_reload: yes
-
-    - name: Remove package file
-      ansible.builtin.file:
-        path: "/tmp/{{ package_file }}"
-        state: absent
