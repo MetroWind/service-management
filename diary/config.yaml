@@ -1,0 +1,12 @@
+unix_socket: "/run/cruel-world/cruel-world.sock"
+
+# The base URL for the application. All redirects and links are based on this.
+root_url: "https://diary.xeno.darksair.org/"
+
+# Directory where the application stores its data (database, etc.)
+data_dir: "/var/lib/cruel-world"
+
+# OIDC Settings
+oidc_url_prefix: "https://auth.xeno.darksair.org/realms/xeno/"
+oidc_client_id: "cruel_world"
+oidc_client_secret: "{{ client_secret }}"

@@ -1,0 +1,94 @@
+- name: Deploy Cruel World
+  hosts: brighid.xeno
+  become: yes
+  vars:
+    client_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63303538376636386564653362306335323432366437326239636466666331386261303866653461
+          6435356331343332653964373431663762326630633336330a326237306633363165653661326566
+          63356365393663356330643738373037653539353862323239343538663563643235303836636237
+          3738656561633638320a363762303136323736303633326236643337633037666437353231633563
+          37646638613135363132376131383961336239306162393634633838646135663666333035313137
+          3332356134666135373164356665333462313261633936366461
+  tasks:
+    - name: Download package
+      ansible.builtin.get_url:
+        url: https://github.com/MetroWind/cruel_world/releases/latest/download/cruel-world-git.pkg.tar.zst
+        dest: /tmp/cruel-world-git.pkg.tar.zst
+
+    - name: Install package
+      community.general.pacman:
+        name: /tmp/cruel-world-git.pkg.tar.zst
+        state: present
+      notify: Restart cruel-world
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/cruel-world-git.pkg.tar.zst
+        state: absent
+
+    - name: Create systemd override directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/cruel-world.service.d
+        state: directory
+        mode: 0755
+
+    - name: Copy systemd override
+      ansible.builtin.copy:
+        src: override.conf
+        dest: /etc/systemd/system/cruel-world.service.d/override.conf
+        mode: 0644
+      notify:
+        - Reload systemd
+        - Restart cruel-world
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/cruel-world.yaml
+        owner: cruel
+        group: cruel
+        mode: 0640
+      notify: Restart cruel-world
+
+    - name: Start server
+      ansible.builtin.systemd:
+        state: started
+        name: cruel-world
+        enabled: yes
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/extra/cruel-world.conf
+      notify: Restart Apache
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/cruel-world\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/cruel-world.conf'
+      notify: Restart Apache
+
+    - name: Start Apache
+      ansible.builtin.systemd:
+        state: started
+        name: httpd
+        enabled: yes
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: Restart cruel-world
+      ansible.builtin.systemd:
+        name: cruel-world
+        state: restarted
+        daemon_reload: yes
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        name: httpd
+        state: restarted
