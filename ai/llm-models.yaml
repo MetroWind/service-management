@@ -71,20 +71,38 @@
           - "/mnt/data/models/llm/GLM-4.7-Flash-IQ4_NL.gguf"
           - "https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF/resolve/main/GLM-4.7-Flash-IQ4_NL.gguf"
 
-    - name: Download qwen3.5 27B abliterated model
+    - name: Download qwen3.6 27B abliterated model
       ansible.builtin.command:
         argv:
           - wget
           - "-c"
           - "-O"
-          - "/mnt/data/models/llm/Huihui-Qwen3.5-27B-abliterated.Q4_K_M.gguf"
-          - "https://huggingface.co/mradermacher/Huihui-Qwen3.5-27B-abliterated-GGUF/resolve/main/Huihui-Qwen3.5-27B-abliterated.Q4_K_M.gguf"
+          - "/mnt/data/models/llm/huihui-qwen3.6-27b-abliterated-q4_k_m.gguf"
+          - "https://huggingface.co/googlecs/Huihui-Qwen3.6-27B-abliterated-Q4_K_M-GGUF/resolve/main/huihui-qwen3.6-27b-abliterated-q4_k_m.gguf"
 
-    - name: Download qwen3.5 27B abliterated mmproj
+    - name: Download qwen3.6 27B mmproj
       ansible.builtin.command:
         argv:
           - wget
           - "-c"
           - "-O"
-          - "/mnt/data/models/llm/Huihui-Qwen3.5-27B-abliterated.mmproj-f16.gguf"
-          - "https://huggingface.co/mradermacher/Huihui-Qwen3.5-27B-abliterated-GGUF/resolve/main/Huihui-Qwen3.5-27B-abliterated.mmproj-f16.gguf"
+          - "/mnt/data/models/llm/qwen3.6-27b-mmproj-BF16.gguf"
+          - "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/mmproj-BF16.gguf"
+
+    - name: Download Gemma 4 26B abliterated model
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/gemma-4-26B-A4B-it-abliterated-UD-Q4_K_M.gguf"
+          - "https://huggingface.co/groxaxo/Huihui-gemma-4-26B-A4B-it-abliterated-GGUF/resolve/main/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf"
+
+    - name: Download Gemma 4 mmproj
+      ansible.builtin.command:
+        argv:
+          - wget
+          - "-c"
+          - "-O"
+          - "/mnt/data/models/llm/gemma-4-mmproj.gguf"
+          - "https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/mmproj-BF16.gguf"
