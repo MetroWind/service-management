@@ -69,8 +69,8 @@
         requirements: /opt/stable-diffusion/comfyui/comfyui/requirements.txt
 
     # For some reason this always get stuck...
-    - name: Install RMBG dependencies
-      ansible.builtin.command: "xargs -n 1 /opt/stable-diffusion/env/bin/pip install < /opt/stable-diffusion/comfyui/comfyui/custom_nodes/ComfyUI-RMBG/requirements.txt"
+    # - name: Install RMBG dependencies
+    #   ansible.builtin.command: "xargs -n 1 /opt/stable-diffusion/env/bin/pip install < /opt/stable-diffusion/comfyui/comfyui/custom_nodes/ComfyUI-RMBG/requirements.txt"
 
     - name: Copy comfyui service file
       ansible.builtin.copy:
