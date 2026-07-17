@@ -1,0 +1,4 @@
+d /var/lib/gonic 0755 gonic gonic
+d /var/cache/gonic 0755 gonic gonic
+d /var/lib/gonic/podcasts 0755 gonic gonic
+d /var/lib/gonic/playlists 0755 gonic gonic

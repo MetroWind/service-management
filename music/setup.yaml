@@ -1,0 +1,115 @@
+- name: Build gonic
+  hosts: amalthus.xeno
+  tasks:
+    - name: Make sure pkg dir exists
+      ansible.builtin.file:
+        path: "~/pkgs/gonic"
+        state: directory
+
+    - name: Copy package definition files
+      ansible.builtin.copy:
+        src: "package/"
+        dest: "~/pkgs/gonic/"
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/gonic"
+        creates: "~/pkgs/gonic/gonic-bin-*.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 gonic-bin-*.pkg.tar.zst"
+        chdir: "~/pkgs/gonic"
+
+    - set_fact:
+        package_files: "{{ package_file_proc.stdout | split('\n') }}"
+
+    - debug:
+        msg: "Built package {{ package_files }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/gonic/{{ item }}"
+        dest: /tmp/
+        flat: yes
+      loop: "{{ package_files }}"
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: "~/pkgs/gonic"
+        state: absent
+
+- name: Deploy gonic
+  hosts: adenine.xeno
+  become: yes
+  vars:
+    package_files: "{{ hostvars['amalthus.xeno']['package_files'] }}"
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ item }}"
+        dest: /tmp/
+      loop: "{{ package_files }}"
+
+    - name: Install dependencies
+      community.general.pacman:
+        name:
+          - ffmpeg
+        state: present
+        reason: dependency
+
+    - name: Install gonic
+      community.general.pacman:
+        name: "{{ ['/tmp/'] | product(package_files) | map('join') | list }}"
+        state: present
+
+    - name: Remove package files
+      ansible.builtin.file:
+        path: "/tmp/{{ item }}"
+        state: absent
+      loop: "{{ package_files }}"
+
+    - name: Copy gonic config
+      ansible.builtin.copy:
+        src: config
+        dest: /etc/gonic/config
+        owner: root
+        group: gonic
+        mode: "0640"
+
+    - name: Copy playlist
+      ansible.builtin.copy:
+        src: playlists/easy_listening.m3u8
+        dest: /var/lib/gonic/playlists/2
+        owner: gonic
+        group: gonic
+
+    - name: Make sure gonic is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: gonic
+        enabled: yes
+
+- name: Setup proxy
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/gonic.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/gonic\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/gonic.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes

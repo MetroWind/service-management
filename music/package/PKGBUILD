@@ -1,0 +1,52 @@
+# Maintainer: MetroWind <chris.corsair@gmail.com>
+pkgname=gonic-bin
+_pkgname=gonic
+pkgver=0.20.1
+pkgrel=2
+pkgdesc='A lightweight music streaming server which implements the Subsonic API (binary release)'
+arch=('x86_64' 'aarch64')
+url='https://github.com/sentriz/gonic'
+license=('GPL-3.0-only')
+options=('!strip')
+depends=()
+optdepends=('ffmpeg: on-the-fly audio transcoding and caching'
+            'mpv: jukebox mode')
+provides=("${_pkgname}=${pkgver}")
+conflicts=("${_pkgname}")
+backup=("etc/${_pkgname}/config")
+install="${_pkgname}.install"
+
+_release="https://github.com/sentriz/${_pkgname}/releases/download/v${pkgver}"
+_config_url="https://raw.githubusercontent.com/sentriz/${_pkgname}/v${pkgver}/contrib/config"
+
+source=("${_pkgname}.service"
+        "${_pkgname}.sysusers"
+        "${_pkgname}.tmpfiles"
+        "${_pkgname}.install"
+        "config::${_config_url}")
+source_x86_64=("${_pkgname}-${pkgver}-linux-amd64::${_release}/${_pkgname}-linux-amd64-v${pkgver}")
+source_aarch64=("${_pkgname}-${pkgver}-linux-arm64::${_release}/${_pkgname}-linux-arm64-v${pkgver}")
+
+sha256sums=('2775485bd295d17f401aff9c61e43dce2980205341c24bca1a7b5557003488ee'
+            '76bd7a50d6f4afcb03921898062706a254a1fffaec7405a836395d75c26fb94f'
+            '5a6a350109c823ce90fc010e209501b09b184a5a6e6a0d4c9b1a98d415b843ea'
+            'c9b3a84b5c991af5f15c134ea332a806aaaa0dd339c893c059625a3ae12edfab'
+            'd1412b37482e4f25d6f12c9bc7debf68a87bbb8716116c44cf460acdf9be2d24')
+sha256sums_x86_64=('5895761a2c279cd74e37dbfbb93ec299ac4439e6944d206e0f8c39c078b75142')
+sha256sums_aarch64=('043d190d4abd0747dc659dca4684b873ddd67b4979ecb7f28b2098cd9e49f0e3')
+
+package() {
+    case "$CARCH" in
+        x86_64)  _bin="${_pkgname}-${pkgver}-linux-amd64" ;;
+        aarch64) _bin="${_pkgname}-${pkgver}-linux-arm64" ;;
+    esac
+
+    install -Dm755 "${srcdir}/${_bin}" "${pkgdir}/usr/bin/${_pkgname}"
+    install -Dm644 "${srcdir}/config" "${pkgdir}/etc/${_pkgname}/config"
+    install -Dm644 "${srcdir}/${_pkgname}.service" \
+        "${pkgdir}/usr/lib/systemd/system/${_pkgname}.service"
+    install -Dm644 "${srcdir}/${_pkgname}.sysusers" \
+        "${pkgdir}/usr/lib/sysusers.d/${_pkgname}.conf"
+    install -Dm644 "${srcdir}/${_pkgname}.tmpfiles" \
+        "${pkgdir}/usr/lib/tmpfiles.d/${_pkgname}.conf"
+}

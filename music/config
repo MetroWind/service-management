@@ -1,0 +1,13 @@
+# gonic server system-wide configuration.
+
+listen-addr                 0.0.0.0:4747
+
+db-path                     /var/lib/gonic/gonic.db
+music-path                  /mnt/stuff/music
+podcast-path                /var/lib/gonic/podcasts
+playlists-path              /var/lib/gonic/playlists
+cache-path                  /var/cache/gonic
+
+scan-interval               0
+scan-at-start-enabled       true
+scan-watcher-enabled        true
