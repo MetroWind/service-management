@@ -1,0 +1,16 @@
+[global]
+# This value forms Matrix user and room IDs and must never change.
+server_name = "darksair.org"
+
+# This directory contains the converted RocksDB database and the media
+# directory. It must not contain unrelated application data.
+database_path = "/var/lib/tuwunel"
+
+# Apache on brighid.xeno proxies Matrix requests to this listener.
+address = ["0.0.0.0"]
+port = 6167
+
+max_request_size = 20_000_000
+allow_registration = false
+allow_federation = true
+trusted_servers = ["matrix.org"]

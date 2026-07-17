@@ -1,0 +1,19 @@
+[Unit]
+Description=Tuwunel Matrix homeserver
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=notify
+Environment="TUWUNEL_CONFIG=/etc/tuwunel/tuwunel.toml"
+User=tuwunel
+Group=tuwunel
+ExecStart=/usr/local/bin/tuwunel
+Restart=on-failure
+RestartSec=5
+# The first start after a Conduit migration can take several minutes before
+# Tuwunel reports readiness to systemd.
+TimeoutStartSec=15min
+
+[Install]
+WantedBy=multi-user.target

@@ -1,62 +1,123 @@
-- name: Setup Conduit
+- name: Set up Tuwunel
   hosts: obrona.xeno
-  become: yes
+  become: true
   vars:
-    branch: next                # next or master
+    tuwunel_version: "1.8.2"
+    tuwunel_asset: >-
+      v{{ tuwunel_version }}-release-all-x86_64-v1-linux-gnu-tuwunel.zst
+    tuwunel_cache_dir: /var/cache/tuwunel
   tasks:
-    - name: Download binary
-      get_url:
-        url: "https://gitlab.com/api/v4/projects/famedly%2Fconduit/jobs/artifacts/{{ branch }}/raw/x86_64-unknown-linux-musl?job=artifacts"
-        dest: /usr/local/bin/matrix-conduit
-        mode: 0755
-    - name: Create sysuser dir
+    - name: Stop and disable Conduit
+      ansible.builtin.systemd:
+        name: conduit.service
+        state: stopped
+        enabled: false
+
+    - name: Create the Tuwunel service account
+      ansible.builtin.copy:
+        src: sysusers-tuwunel.conf
+        dest: /etc/sysusers.d/tuwunel.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Apply the Tuwunel system-user definition
+      ansible.builtin.command: systemd-sysusers
+      changed_when: false
+
+    - name: Create the download cache directory
       ansible.builtin.file:
-        path: /etc/sysusers.d
+        path: "{{ tuwunel_cache_dir }}"
         state: directory
         owner: root
         group: root
-        mode: '0755'
-    - name: Copy sysusers file
-      ansible.builtin.copy:
-        src: sysusers-conduit.conf
-        dest: /etc/sysusers.d/conduit.conf
+        mode: "0755"
+
+    - name: Download the Tuwunel release
+      ansible.builtin.get_url:
+        url: >-
+          {{ "https://github.com/matrix-construct/tuwunel/releases/download/v"
+             ~ tuwunel_version ~ "/" ~ tuwunel_asset }}
+        dest: "{{ tuwunel_cache_dir }}/{{ tuwunel_asset }}"
         owner: root
         group: root
-        mode: '0644'
-    - name: Ensure user
+        mode: "0644"
+      register: tuwunel_download
+
+    - name: Check for the Tuwunel binary
+      ansible.builtin.stat:
+        path: /usr/local/bin/tuwunel
+      register: tuwunel_binary
+
+    - name: Install the Tuwunel binary
+      ansible.builtin.command:
+        cmd: >-
+          zstd --decompress --force -o /usr/local/bin/tuwunel
+          {{ tuwunel_cache_dir }}/{{ tuwunel_asset }}
+      when: tuwunel_download.changed or not tuwunel_binary.stat.exists
+      notify: Restart Tuwunel
+
+    - name: Set Tuwunel binary permissions
+      ansible.builtin.file:
+        path: /usr/local/bin/tuwunel
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Remove the downloaded Tuwunel release
+      ansible.builtin.file:
+        path: "{{ tuwunel_cache_dir }}"
+        state: absent
+
+    - name: Create the Tuwunel configuration directory
+      ansible.builtin.file:
+        path: /etc/tuwunel
+        state: directory
+        owner: root
+        group: tuwunel
+        mode: "0750"
+
+    - name: Install the Tuwunel configuration
+      ansible.builtin.copy:
+        src: tuwunel.toml
+        dest: /etc/tuwunel/tuwunel.toml
+        owner: root
+        group: tuwunel
+        mode: "0640"
+      notify: Restart Tuwunel
+
+    - name: Give Tuwunel ownership of its prepared data directory
+      ansible.builtin.file:
+        path: /var/lib/tuwunel
+        state: directory
+        owner: tuwunel
+        group: tuwunel
+        recurse: true
+
+    - name: Restrict access to the Tuwunel data directory
+      ansible.builtin.file:
+        path: /var/lib/tuwunel
+        state: directory
+        mode: "0700"
+
+    - name: Install the Tuwunel systemd unit
+      ansible.builtin.copy:
+        src: tuwunel.service
+        dest: /etc/systemd/system/tuwunel.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Tuwunel
+
+    - name: Enable and start Tuwunel
       ansible.builtin.systemd:
+        name: tuwunel.service
+        enabled: true
         state: started
-        name: systemd-sysusers
-    - name: Create config dir
-      ansible.builtin.file:
-        path: /etc/matrix-conduit
-        state: directory
-        owner: conduit
-        group: conduit
-        mode: '0755'
-    - name: Copy config file
-      ansible.builtin.copy:
-        src: conduit.toml
-        dest: /etc/matrix-conduit/conduit.toml
-        owner: conduit
-        group: conduit
-        mode: '0644'
-    - name: Copy service file
-      ansible.builtin.copy:
-        src: conduit.service
-        dest: /etc/systemd/system/conduit.service
-        owner: root
-        group: root
-        mode: '0644'
-    - name: Create runtime dir
-      ansible.builtin.file:
-        path: /var/lib/matrix-conduit
-        state: directory
-        owner: conduit
-        group: conduit
-        mode: '0750'
-    - name: Ensure conduit service is enabled and started
+        daemon_reload: true
+
+  handlers:
+    - name: Restart Tuwunel
       ansible.builtin.systemd:
+        name: tuwunel.service
         state: restarted
-        name: conduit
-        enabled: yes
