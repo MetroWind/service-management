@@ -1,27 +1,36 @@
-# Server Configuration
+url_root: "https://f.mws.rocks/"
+# Uses the host part of url_root by default
+# public_domain: "f.mws.rocks"
+listen_address: "127.0.0.1"
+listen_port: 41189
 
-# The public URL of the server (without trailing slash)
-server_url_root: "https://f.mws.rocks"
+database_path: "/var/lib/unspoken/unspoken.db"
+attachment_dir: "/var/lib/unspoken/attachments"
+emoji_dir: "/var/lib/unspoken/emoji"
+emoji_data_file: "/usr/share/unspoken/data/emoji_categories.json"
+template_dir: "/usr/share/unspoken/templates"
+static_dir: "/usr/share/unspoken/static"
 
-# Port to listen on
-port: 41189
-
-# Directory for data (database, uploads, templates)
-# Defaults to current directory if not set
-data_dir: "/var/lib/unspoken"
-
-# Number of posts to show per page in timeline and profile
 posts_per_page: 20
 
-# OpenID Connect Configuration (for login)
-oidc_issuer_url: "https://auth.xeno.darksair.org/realms/xeno"
-oidc_client_id: "unspoken"
-oidc_secret: "{{ client_id }}"
+http_signature_skew_seconds: 300
+thread_fetch_max_depth: 20
+sqlite_busy_timeout_ms: 5000
 
-# Secret key for session signing (Generate a long random string)
-secret_key: "PNPcC349gQ0RjrQ8P3sCykmwlJGpwqzG"
+job_workers: 4
+job_max_retries: 8
+job_retry_base_delay_seconds: 30
 
-# NodeInfo Metadata
+max_upload_bytes: 10485760
+verbose: true
+
+oidc:
+  issuer: "https://auth.xeno.darksair.org/realms/xeno"
+  client_id: "unspoken"
+  client_secret: "{{ client_id }}"
+  scopes: "openid profile"
+
 nodeinfo:
-  name: "Unspoken Microblog"
-  description: "A C++ ActivityPub Server"
+  software_name: "unspoken"
+  open_registrations: true
+  description: "A small fedi instance."

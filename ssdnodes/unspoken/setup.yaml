@@ -28,7 +28,7 @@
     - name: Copy config
       ansible.builtin.template:
         src: config.yaml
-        dest: /etc/unspoken.yaml
+        dest: /etc/unspoken/config.yaml
         owner: unspoken
         group: unspoken
         mode: 0600
