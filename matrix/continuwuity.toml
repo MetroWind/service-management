@@ -2,9 +2,9 @@
 # This value forms Matrix user and room IDs and must never change.
 server_name = "darksair.org"
 
-# This directory contains the converted RocksDB database and the media
-# directory. It must not contain unrelated application data.
-database_path = "/var/lib/tuwunel"
+# This directory contains only Continuwuity's RocksDB database and media tree.
+# It must never be shared with Tuwunel or another homeserver.
+database_path = "/var/lib/continuwuity"
 
 # Apache on brighid.xeno proxies Matrix requests to this listener.
 address = ["0.0.0.0"]

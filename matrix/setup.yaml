@@ -1,123 +1,124 @@
-- name: Set up Tuwunel
+- name: Set up Continuwuity
   hosts: obrona.xeno
   become: true
   vars:
-    tuwunel_version: "1.8.2"
-    tuwunel_asset: >-
-      v{{ tuwunel_version }}-release-all-x86_64-v1-linux-gnu-tuwunel.zst
-    tuwunel_cache_dir: /var/cache/tuwunel
+    continuwuity_version: "26.6.2"
+    continuwuity_asset: conduwuit-linux-amd64
+    continuwuity_cache_dir: /var/cache/continuwuity
   tasks:
+    - name: Stop and disable Tuwunel
+      ansible.builtin.systemd:
+        name: tuwunel.service
+        state: stopped
+        enabled: false
+
     - name: Stop and disable Conduit
       ansible.builtin.systemd:
         name: conduit.service
         state: stopped
         enabled: false
 
-    - name: Create the Tuwunel service account
+    - name: Create the Continuwuity service account
       ansible.builtin.copy:
-        src: sysusers-tuwunel.conf
-        dest: /etc/sysusers.d/tuwunel.conf
+        src: sysusers-continuwuity.conf
+        dest: /etc/sysusers.d/continuwuity.conf
         owner: root
         group: root
         mode: "0644"
 
-    - name: Apply the Tuwunel system-user definition
+    - name: Apply the Continuwuity system-user definition
       ansible.builtin.command: systemd-sysusers
       changed_when: false
 
     - name: Create the download cache directory
       ansible.builtin.file:
-        path: "{{ tuwunel_cache_dir }}"
+        path: "{{ continuwuity_cache_dir }}"
         state: directory
         owner: root
         group: root
         mode: "0755"
 
-    - name: Download the Tuwunel release
+    - name: Download the Continuwuity release
       ansible.builtin.get_url:
         url: >-
-          {{ "https://github.com/matrix-construct/tuwunel/releases/download/v"
-             ~ tuwunel_version ~ "/" ~ tuwunel_asset }}
-        dest: "{{ tuwunel_cache_dir }}/{{ tuwunel_asset }}"
+          {{ "https://forgejo.ellis.link/continuwuation/continuwuity/releases/download/v"
+             ~ continuwuity_version ~ "/" ~ continuwuity_asset }}
+        dest: "{{ continuwuity_cache_dir }}/{{ continuwuity_asset }}"
         owner: root
         group: root
         mode: "0644"
-      register: tuwunel_download
+      register: continuwuity_download
 
-    - name: Check for the Tuwunel binary
+    - name: Check for the Continuwuity binary
       ansible.builtin.stat:
-        path: /usr/local/bin/tuwunel
-      register: tuwunel_binary
+        path: /usr/local/bin/continuwuity
+      register: continuwuity_binary
 
-    - name: Install the Tuwunel binary
-      ansible.builtin.command:
-        cmd: >-
-          zstd --decompress --force -o /usr/local/bin/tuwunel
-          {{ tuwunel_cache_dir }}/{{ tuwunel_asset }}
-      when: tuwunel_download.changed or not tuwunel_binary.stat.exists
-      notify: Restart Tuwunel
-
-    - name: Set Tuwunel binary permissions
-      ansible.builtin.file:
-        path: /usr/local/bin/tuwunel
+    - name: Install the Continuwuity binary
+      ansible.builtin.copy:
+        src: "{{ continuwuity_cache_dir }}/{{ continuwuity_asset }}"
+        dest: /usr/local/bin/continuwuity
+        remote_src: true
         owner: root
         group: root
         mode: "0755"
+      when: continuwuity_download.changed or not continuwuity_binary.stat.exists
+      notify: Restart Continuwuity
 
-    - name: Remove the downloaded Tuwunel release
+    - name: Remove the downloaded Continuwuity release
       ansible.builtin.file:
-        path: "{{ tuwunel_cache_dir }}"
+        path: "{{ continuwuity_cache_dir }}"
         state: absent
 
-    - name: Create the Tuwunel configuration directory
+    - name: Create the Continuwuity configuration directory
       ansible.builtin.file:
-        path: /etc/tuwunel
+        path: /etc/continuwuity
         state: directory
         owner: root
-        group: tuwunel
+        group: continuwuity
         mode: "0750"
 
-    - name: Install the Tuwunel configuration
+    - name: Install the Continuwuity configuration
       ansible.builtin.copy:
-        src: tuwunel.toml
-        dest: /etc/tuwunel/tuwunel.toml
+        src: continuwuity.toml
+        dest: /etc/continuwuity/continuwuity.toml
         owner: root
-        group: tuwunel
+        group: continuwuity
         mode: "0640"
-      notify: Restart Tuwunel
+      notify: Restart Continuwuity
 
-    - name: Give Tuwunel ownership of its prepared data directory
+    - name: Give Continuwuity ownership of its prepared data directory
       ansible.builtin.file:
-        path: /var/lib/tuwunel
+        path: /var/lib/continuwuity
         state: directory
-        owner: tuwunel
-        group: tuwunel
+        owner: continuwuity
+        group: continuwuity
         recurse: true
 
-    - name: Restrict access to the Tuwunel data directory
+    - name: Restrict access to the Continuwuity data directory
       ansible.builtin.file:
-        path: /var/lib/tuwunel
+        path: /var/lib/continuwuity
         state: directory
         mode: "0700"
 
-    - name: Install the Tuwunel systemd unit
+    - name: Install the Continuwuity systemd unit
       ansible.builtin.copy:
-        src: tuwunel.service
-        dest: /etc/systemd/system/tuwunel.service
+        src: continuwuity.service
+        dest: /etc/systemd/system/continuwuity.service
         owner: root
         group: root
         mode: "0644"
-      notify: Restart Tuwunel
+      notify: Restart Continuwuity
 
-    - name: Enable and start Tuwunel
+    - name: Enable and start Continuwuity
       ansible.builtin.systemd:
-        name: tuwunel.service
+        name: continuwuity.service
         enabled: true
         state: started
         daemon_reload: true
 
   handlers:
-    - name: Restart Tuwunel
+    - name: Restart Continuwuity
       ansible.builtin.systemd:
-        name: tuwunel.service
+        name: continuwuity.service
         state: restarted

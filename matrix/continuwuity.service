@@ -1,18 +1,17 @@
 [Unit]
-Description=Tuwunel Matrix homeserver
+Description=Continuwuity Matrix homeserver
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 Type=notify
-Environment="TUWUNEL_CONFIG=/etc/tuwunel/tuwunel.toml"
-User=tuwunel
-Group=tuwunel
-ExecStart=/usr/local/bin/tuwunel
+User=continuwuity
+Group=continuwuity
+ExecStart=/usr/local/bin/continuwuity --config /etc/continuwuity/continuwuity.toml
 Restart=on-failure
 RestartSec=5
 # The first start after a Conduit migration can take several minutes before
-# Tuwunel reports readiness to systemd.
+# Continuwuity reports readiness to systemd.
 TimeoutStartSec=15min
 
 [Install]
