@@ -1,79 +1,76 @@
-- name: Build package
-  hosts: amalthus.xeno
-  vars:
-    package: blocky
-  tasks:
-    - name: Download PKGBUILD
-      ansible.builtin.get_url:
-        url: "https://aur.archlinux.org/cgit/aur.git/snapshot/{{ package }}.tar.gz"
-        dest: "/home/user/pkgs/{{ package }}.tar.gz"
-        mode: '0644'
-
-    - name: Extract PKGBUILD
-      ansible.builtin.unarchive:
-        src: "/home/user/pkgs/{{ package }}.tar.gz"
-        dest: /home/user/pkgs
-        remote_src: yes
-
-    - name: Remove tarball
-      ansible.builtin.file:
-        path: "/home/user/pkgs/{{ package }}.tar.gz"
-        state: absent
-
-    - name: Build package
-      ansible.builtin.command:
-        cmd: "makepkg -sr --noconfirm -f"
-        chdir: "/home/user/pkgs/{{ package }}"
-        creates: "/home/user/pkgs/{{ package }}/{{ package }}-*-x86_64.pkg.tar.zst"
-
-    - name: What package did I build?
-      register: package_file_proc
-      ansible.builtin.shell:
-        cmd: "ls -1 {{ package }}-*-x86_64.pkg.tar.zst"
-        chdir: "/home/user/pkgs/{{ package }}"
-
-    - set_fact:
-        package_file: "{{ package_file_proc.stdout }}"
-
-    - debug:
-        msg: "Built package {{ package_file }}"
-
-    - name: Fetch package to local
-      ansible.builtin.fetch:
-        src: "/home/user/pkgs/{{ package }}/{{ package_file }}"
-        dest: /tmp/
-        flat: yes
-
-    - name: Remove build files
-      ansible.builtin.file:
-        path: "/home/user/pkgs/{{ package }}"
-        state: absent
-
-- name: Setup DB
-  ansible.builtin.import_playbook: init-db.yaml
-
 - name: Deploy Blocky
   hosts: torna.xeno
   become: yes
   vars:
-    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
-    db_password: "{{ hostvars['brighid.xeno']['db_password'] }}"
+    blocky_version: 0.33.0
+    blocky_archive: "blocky_v{{ blocky_version }}_Linux_x86_64.tar.gz"
+    blocky_url: "https://github.com/0xERR0R/blocky/releases/download/v{{ blocky_version }}/{{ blocky_archive }}"
+    blocky_cache_dir: /var/cache/blocky
+    blocky_extract_dir: "{{ blocky_cache_dir }}/v{{ blocky_version }}"
   tasks:
-    - name: Copy package to remote
+    - name: Create the Blocky service account
+      ansible.builtin.user:
+        name: blocky
+        system: yes
+        shell: /usr/bin/nologin
+        create_home: no
+
+    - name: Install the Blocky systemd service
       ansible.builtin.copy:
-        src: "/tmp/{{ package_file }}"
-        dest: /tmp/
+        src: blocky.service
+        dest: /etc/systemd/system/blocky.service
+        owner: root
+        group: root
+        mode: "0644"
 
-    - name: Install package
-      community.general.pacman:
-        name: "/tmp/{{ package_file }}"
-        state: present
-
-    - name: Remove package file
+    - name: Create the Blocky download cache directory
       ansible.builtin.file:
-        path: "/tmp/{{ package_file }}"
-        state: absent
+        path: "{{ blocky_cache_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
 
-    - name: Install config file
+    - name: Download the Blocky release
+      ansible.builtin.get_url:
+        url: "{{ blocky_url }}"
+        dest: "{{ blocky_cache_dir }}/{{ blocky_archive }}"
+        mode: "0644"
+
+    - name: Create the Blocky extraction directory
+      ansible.builtin.file:
+        path: "{{ blocky_extract_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Extract the Blocky release
+      ansible.builtin.unarchive:
+        src: "{{ blocky_cache_dir }}/{{ blocky_archive }}"
+        dest: "{{ blocky_extract_dir }}"
+        remote_src: yes
+        creates: "{{ blocky_extract_dir }}/blocky"
+
+    - name: Install the Blocky binary
+      ansible.builtin.copy:
+        src: "{{ blocky_extract_dir }}/blocky"
+        dest: /usr/local/bin/blocky
+        remote_src: yes
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install the Blocky configuration
       ansible.builtin.include_tasks:
         file: tasks-update-config.yaml
+
+    - name: Remove the downloaded Blocky release
+      ansible.builtin.file:
+        path: "{{ blocky_cache_dir }}/{{ blocky_archive }}"
+        state: absent
+
+    - name: Remove the extracted Blocky files
+      ansible.builtin.file:
+        path: "{{ blocky_extract_dir }}"
+        state: absent

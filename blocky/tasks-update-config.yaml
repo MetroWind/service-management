@@ -17,3 +17,4 @@
     state: restarted
     name: blocky
     enabled: yes
+    daemon_reload: yes

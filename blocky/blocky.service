@@ -1,0 +1,16 @@
+[Unit]
+Description=Blocky DNS proxy and ad blocker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=blocky
+Group=blocky
+ExecStart=/usr/local/bin/blocky --config /etc/blocky.yml
+Restart=on-failure
+RestartSec=2s
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+StateDirectory=blocky
+
+[Install]
+WantedBy=multi-user.target
