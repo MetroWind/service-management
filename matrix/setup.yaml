@@ -122,3 +122,86 @@
       ansible.builtin.systemd:
         name: continuwuity.service
         state: restarted
+
+- name: Set up reverse proxy
+  hosts: brighid.xeno
+  become: true
+  tasks:
+    - name: Create the local Matrix documentation build directory
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/docs/build"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+    - name: Build Matrix documentation
+      ansible.builtin.command:
+        argv:
+          - pandoc
+          - --from=markdown
+          - --to=html5
+          - --standalone
+          - "--template={{ playbook_dir }}/docs/template.html"
+          - "--output={{ playbook_dir }}/docs/build/index.html"
+          - "{{ playbook_dir }}/docs/index.md"
+      changed_when: false
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+    - name: Create the Matrix documentation directory
+      ansible.builtin.file:
+        path: /srv/http-matrix
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Publish Matrix documentation
+      ansible.builtin.copy:
+        src: docs/build/
+        dest: /srv/http-matrix/
+        owner: root
+        group: root
+        mode: "0644"
+        directory_mode: "0755"
+
+    - name: Publish Matrix documentation assets
+      ansible.builtin.copy:
+        src: docs/static/
+        dest: /srv/http-matrix/assets/
+        owner: root
+        group: root
+        mode: "0644"
+        directory_mode: "0755"
+
+    - name: Remove retired Matrix documentation page
+      ansible.builtin.file:
+        path: /srv/http-matrix/getting-started.html
+        state: absent
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/matrix.conf
+      notify: Restart Apache
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/matrix\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/matrix.conf'
+      notify: Restart Apache
+
+    - name: Validate Apache configuration
+      ansible.builtin.command: httpd -t
+      changed_when: false
+
+  handlers:
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        name: httpd
+        state: restarted

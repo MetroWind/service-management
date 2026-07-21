@@ -1,0 +1,67 @@
+:root {
+    color-scheme: dark;
+    font-family: system-ui, sans-serif;
+    line-height: 1.65;
+}
+
+body {
+    background: #030805;
+    color: #e4f5e7;
+    margin: 0 auto;
+    max-width: 44rem;
+    padding: 2rem 1.25rem;
+}
+
+main {
+    background: rgb(3 12 7 / 82%);
+    border: 1px solid rgb(90 255 145 / 18%);
+    border-radius: 0.75rem;
+    box-shadow: 0 0 2rem rgb(0 255 100 / 10%);
+    padding: 0.75rem 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+#matrix-rain {
+    height: 100%;
+    inset: 0;
+    pointer-events: none;
+    position: fixed;
+    width: 100%;
+    z-index: 0;
+}
+
+a {
+    color: #76f59a;
+}
+
+code {
+    font-size: 0.95em;
+}
+
+img {
+    display: block;
+    height: auto;
+    max-width: 100%;
+}
+
+img.screenshot {
+    width: min(100%, 22rem);
+}
+
+blockquote {
+    background: rgb(80 230 120 / 7%);
+    border-inline-start: 0.25rem solid #76f59a;
+    margin-inline: 0;
+    padding-inline-start: 1rem;
+}
+
+@media (max-width: 36rem) {
+    body {
+        padding: 1rem 0.75rem;
+    }
+
+    main {
+        padding: 0.5rem 1rem;
+    }
+}
