@@ -19,6 +19,8 @@ sql_database: /var/lib/ejabberd/database/data.db
 acl:
   admin:
     user: mw@xmpp.xeno.darksair.org
+  xmpp_users:
+    server: xmpp.xeno.darksair.org
 
 access_rules:
   local:
@@ -34,6 +36,8 @@ access_rules:
     allow: local
   pubsub_createnode:
     allow: local
+  http_upload:
+    allow: xmpp_users
   trusted_network:
     allow: loopback
 
@@ -120,13 +124,24 @@ modules:
   mod_configure: {}
   mod_disco: {}
   mod_fail2ban: {}
+  ## Reject unsolicited traffic from domains listed by the public XMPPBL RTBL.
+  ## Keep rejected stanzas in ejabberd's spam dump for review.
+  mod_antispam:
+    rtbl_services:
+      - xmppbl.org
+    spam_dump_file: true
   mod_http_api: {}
   mod_http_upload:
+    ## The upload service itself is upload.xmpp.xeno.darksair.org, so
+    ## its default `local` rule would not match users of xmpp.xeno.darksair.org.
+    access: http_upload
     put_url: https://@HOST@:5443/upload
     custom_headers:
       "Access-Control-Allow-Origin": "https://@HOST@"
       "Access-Control-Allow-Methods": "GET,HEAD,PUT,OPTIONS"
       "Access-Control-Allow-Headers": "Content-Type"
+  mod_http_upload_quota:
+    max_days: 365
   mod_last: {}
   mod_mam:
     ## Mnesia is limited to 2GB, better to use an SQL backend
@@ -135,7 +150,6 @@ modules:
     ## db_type: sql
     assume_mam_usage: true
     default: always
-  mod_mqtt: {}
   mod_muc:
     access:
       - allow

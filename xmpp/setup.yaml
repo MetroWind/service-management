@@ -76,6 +76,7 @@
         state: started
         name: copy-cert-xmpp.timer
         enabled: yes
+        daemon_reload: yes
 
     - name: Restart server
       ansible.builtin.systemd:
