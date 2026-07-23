@@ -14,3 +14,4 @@ max_request_size = 200_000_000
 allow_registration = false
 allow_federation = true
 trusted_servers = ["matrix.org"]
+new_user_displayname_suffix = "💯"
