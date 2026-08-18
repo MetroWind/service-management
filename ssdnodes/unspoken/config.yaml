@@ -16,6 +16,7 @@ posts_per_page: 20
 http_signature_skew_seconds: 300
 thread_fetch_max_depth: 20
 sqlite_busy_timeout_ms: 5000
+remote_actor_gc_grace_seconds: 86400
 
 job_workers: 4
 job_max_retries: 8
