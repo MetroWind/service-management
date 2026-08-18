@@ -2,7 +2,7 @@
   hosts: obrona.xeno
   become: true
   vars:
-    continuwuity_version: "26.6.2"
+    continuwuity_version: "26.7.2"
     continuwuity_asset: conduwuit-linux-amd64
     continuwuity_cache_dir: /var/cache/continuwuity
   tasks:
