@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="$if(lang)$$lang$$else$en$endif$">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="The principles behind Naively Simple.">
+    <meta name="theme-color" content="#f3efe5">
+    <title>$if(title)$$title$$else$Naively Simple$endif$</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+    <link rel="stylesheet" href="/assets/fonts/IosevkaAile.css">
+    <link rel="stylesheet" href="/assets/fonts/IosevkaEtoile.css">
+</head>
+<body>
+    <header class="site_header">
+        <a class="wordmark" href="/" aria-label="Naively Simple home">
+            Naively Simple<span aria-hidden="true">.</span>
+        </a>
+        <nav aria-label="Primary navigation">
+            <a href="/#projects">Projects</a>
+            <a href="/manifesto/" aria-current="page">Principles</a>
+        </nav>
+    </header>
+
+    <main class="manifesto">
+        <article class="manifesto_content">
+$body$
+        </article>
+    </main>
+
+    <footer>
+        <p>
+            Naively Simple is an independent open-source initiative
+            maintained by
+            <a href="https://github.com/MetroWind">MetroWind</a>.
+        </p>
+        <p>Built plainly, hosted independently.</p>
+    </footer>
+</body>
+</html>

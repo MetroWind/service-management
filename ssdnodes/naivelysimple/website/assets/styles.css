@@ -73,7 +73,8 @@ nav a {
 }
 
 nav a:hover,
-nav a:focus-visible {
+nav a:focus-visible,
+nav a[aria-current="page"] {
     color: var(--accent_dark);
 }
 
@@ -159,6 +160,18 @@ h2 {
 .statement div p {
     color: var(--muted);
     font-size: clamp(1.15rem, 2vw, 1.4rem);
+}
+
+.statement_link {
+    color: var(--accent_dark);
+    font-family: var(--code);
+    font-size: 0.85rem;
+    text-underline-offset: 0.3rem;
+}
+
+.statement_link:hover,
+.statement_link:focus-visible {
+    color: var(--accent);
 }
 
 .projects {
@@ -248,6 +261,40 @@ h2 {
     color: var(--muted);
 }
 
+.manifesto {
+    padding: 5rem 0 6rem;
+}
+
+.manifesto_content {
+    max-width: 52rem;
+    margin-inline: auto;
+}
+
+.manifesto_content h1 {
+    margin-bottom: 4rem;
+    font-size: clamp(3rem, 7vw, 6rem);
+    line-height: 0.95;
+}
+
+.manifesto_content h2 {
+    margin-top: 4rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.manifesto_content p {
+    font-size: 1.1rem;
+    line-height: 1.75;
+}
+
+.manifesto_content a {
+    color: var(--accent_dark);
+    text-underline-offset: 0.2rem;
+}
+
+.manifesto_content em {
+    color: var(--accent_dark);
+}
+
 .project > a:hover,
 .project > a:focus-visible {
     color: var(--accent);
@@ -330,6 +377,14 @@ footer a {
 
     .projects {
         padding: 5rem 0;
+    }
+
+    .manifesto {
+        padding: 4rem 0 5rem;
+    }
+
+    .manifesto_content h1 {
+        margin-bottom: 3rem;
     }
 
     .project {

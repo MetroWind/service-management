@@ -1,0 +1,164 @@
+- name: Deploy the Naively Simple website
+  hosts: ssh.mws.rocks
+  become: yes
+  vars:
+    site_root: /srv/http/naivelysimple
+    font_version: 34.8.0
+    font_work_dir: /tmp/naivelysimple-fonts
+    font_release_url: >-
+      https://github.com/be5invis/Iosevka/releases/download/v{{ font_version }}
+  tasks:
+    - name: Create a local build directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: naivelysimple-
+      become: false
+      delegate_to: localhost
+      register: site_build
+      run_once: true
+
+    - name: Build the manifesto
+      ansible.builtin.command:
+        argv:
+          - pandoc
+          - manifesto.md
+          - --from=gfm
+          - --to=html5
+          - --standalone
+          - --template=manifesto-template.html
+          - --metadata=title:The Naively Simple Manifesto
+          - --output={{ site_build.path }}/manifesto.html
+      args:
+        chdir: "{{ playbook_dir }}"
+      become: false
+      delegate_to: localhost
+      run_once: true
+
+    - name: Install archive tools
+      community.general.pacman:
+        name:
+          - unzip
+        state: present
+
+    - name: Create website directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ site_root }}"
+        - "{{ site_root }}/assets"
+        - "{{ site_root }}/assets/fonts"
+        - "{{ site_root }}/assets/fonts/WOFF2"
+        - "{{ site_root }}/manifesto"
+
+    - name: Copy website files
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: '0644'
+      loop:
+        - src: website/index.html
+          dest: "{{ site_root }}/index.html"
+        - src: website/assets/styles.css
+          dest: "{{ site_root }}/assets/styles.css"
+        - src: website/assets/fonts/IosevkaAile.css
+          dest: "{{ site_root }}/assets/fonts/IosevkaAile.css"
+        - src: website/assets/fonts/IosevkaEtoile.css
+          dest: "{{ site_root }}/assets/fonts/IosevkaEtoile.css"
+
+    - name: Copy manifesto
+      ansible.builtin.copy:
+        src: "{{ site_build.path }}/manifesto.html"
+        dest: "{{ site_root }}/manifesto/index.html"
+        mode: '0644'
+
+    - name: Remove the local build directory
+      ansible.builtin.file:
+        path: "{{ site_build.path }}"
+        state: absent
+      become: false
+      delegate_to: localhost
+      run_once: true
+
+    - name: Create font download directories
+      ansible.builtin.file:
+        path: "{{ font_work_dir }}/{{ item | lower }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - IosevkaAile
+        - IosevkaEtoile
+
+    - name: Download web fonts
+      ansible.builtin.get_url:
+        url: >-
+          {{ font_release_url }}/PkgWebFont-{{ item }}-{{ font_version }}.zip
+        dest: >-
+          {{ font_work_dir }}/PkgWebFont-{{ item }}-{{ font_version }}.zip
+        mode: '0644'
+      loop:
+        - IosevkaAile
+        - IosevkaEtoile
+
+    - name: Extract web fonts
+      ansible.builtin.unarchive:
+        src: >-
+          {{ font_work_dir }}/PkgWebFont-{{ item }}-{{ font_version }}.zip
+        dest: "{{ font_work_dir }}/{{ item | lower }}"
+        remote_src: true
+        creates: >-
+          {{ font_work_dir }}/{{ item | lower
+          }}/WOFF2/{{ item }}-Regular.woff2
+      loop:
+        - IosevkaAile
+        - IosevkaEtoile
+
+    - name: Install web fonts
+      ansible.builtin.copy:
+        src: "{{ font_work_dir }}/{{ item | lower }}/WOFF2/"
+        dest: "{{ site_root }}/assets/fonts/WOFF2/"
+        remote_src: true
+        mode: preserve
+      loop:
+        - IosevkaAile
+        - IosevkaEtoile
+
+    - name: Remove font download directory
+      ansible.builtin.file:
+        path: "{{ font_work_dir }}"
+        state: absent
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/naivelysimple.conf
+        mode: '0644'
+      notify: Restart Apache
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#?Include\s+conf/vhosts/naivelysimple\.conf$'
+        insertafter: EOF
+        line: 'Include conf/vhosts/naivelysimple.conf'
+      notify: Restart Apache
+
+    - name: Make sure Apache is running and enabled
+      ansible.builtin.systemd:
+        name: httpd
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Validate Apache configuration
+      ansible.builtin.command:
+        cmd: /usr/bin/httpd -t
+      changed_when: false
+      listen: Restart Apache
+
+    - name: Restart Apache service
+      ansible.builtin.systemd:
+        name: httpd
+        state: restarted
+      listen: Restart Apache

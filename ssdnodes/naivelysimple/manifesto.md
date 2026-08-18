@@ -1,4 +1,4 @@
-# Naively Simple
+# The Naively Simple Manifesto
 
 Naively Simple is built around a simple idea: software should be
 straightforward, efficient, easy to build, and easy to run. People should
@@ -40,10 +40,10 @@ developer membership.
 
 In other words, an iPhone user pays Apple for the hardware, then has to pay
 Apple again for the privilege of letting Apple decide whether they may run
-their own software on it. The important word is "decide," not "allow."
+their own software on it. The important word is “decide,” not “allow.”
 Apple reserves the right to say no.
 
-We also reject the term "sideloading." Installing a program obtained
+We also reject the term “sideloading.” Installing a program obtained
 directly from its developer is simply installing software. An app
 store is an optional intermediary, not the natural owner of the
 installation process. Stores can provide useful discovery, updates,

@@ -1,7 +1,8 @@
 # Naively Simple website
 
 This is the static website for the Naively Simple open-source initiative.
-It has no build step or runtime dependencies.
+The deployment playbook uses Pandoc to build the manifesto page from
+`../manifesto.md`. The deployed site has no runtime dependencies.
 
 To preview it locally, serve this directory with any static HTTP server.
 For example:
