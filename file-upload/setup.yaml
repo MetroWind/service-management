@@ -1,0 +1,95 @@
+- name: Build plik
+  hosts: amalthus.xeno
+  tasks:
+    - name: Copy package definition
+      ansible.builtin.copy:
+        src: "pkg/"
+        dest: "~/pkgs/plik"
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "~/pkgs/plik"
+        creates: "~/pkgs/plik/plikd-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 plikd-*-x86_64.pkg.tar.zst"
+        chdir: "~/pkgs/plik"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+    - name: Fetch package to local
+      ansible.builtin.fetch:
+        src: "~/pkgs/plik/{{ package_file }}"
+        dest: /tmp/
+        flat: yes
+
+    - name: Remove build files
+      ansible.builtin.file:
+        path: ~/pkgs/plik
+        state: absent
+
+- name: Deploy plik
+  hosts: adenine.xeno
+  become: yes
+  vars:
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+    client_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          34333566303862346636316636376439353633393338636564643637626335623133636439643735
+          3062386132323937346533313139633539313837353064610a393934336636626435616566393934
+          30363964623136303037663232336164383435643330633463666564336434656330633133666161
+          3938316232636663300a626363333031636366333132313239656161393263383536323232633736
+          35313437303133663835326532663232663833333937633462633930636134623439656338376233
+          3432363033323739346561353665623731646535656139363836
+  tasks:
+    - name: Copy package to remote
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: /tmp/
+
+    # Install package from file doesn’t work until
+    # https://github.com/ansible-collections/community.general/issues/4285
+    # is upstream and is incorporated in Gentoo.
+    - name: Install package
+      ansible.builtin.command:
+        cmd: "pacman -U --noconfirm /tmp/{{ package_file }}"
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: plikd.cfg
+        dest: /etc/plikd.cfg
+
+    - name: Make sure plikd is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: plikd
+        enabled: yes
+
+- name: Setup proxy
+  hosts: brighid.xeno
+  become: yes
+  tasks:
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/plik.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/plik\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/extra/plik.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes

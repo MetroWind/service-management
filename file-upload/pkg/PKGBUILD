@@ -1,0 +1,39 @@
+pkgname=plikd
+pkgver=1.4.2
+pkgrel=3
+pkgdesc="A temporary file upload system (Wetransfer like) in Go"
+url="https://github.com/root-gg/plik"
+arch=(x86_64)
+license=("MIT")
+options=("!strip")
+optdepends=("postgresql: to use postgreSQL as database backend"
+            "mysql: to use MySQL as database backend"
+            "mariadb: to use MariaDB as database backend")
+source=("https://github.com/root-gg/plik/releases/download/${pkgver}/plik-server-${pkgver}-linux-amd64.tar.gz"
+        "plikd_config.patch"
+        "plikd.service"
+        "plik.sysusers"
+        "plik.tmpfiles")
+sha256sums=('328cd739f198f5ca40e5010e61ed6f8a70d5a18d7418b8b543bab1710c92dc61'
+            '2d935c1b1031c59214d216777b53e3607342798be682417bdb022725570650ce'
+            '6670a9d717d31c3b68f473b1864188e64b4c367d79c4d5195245700da415afa3'
+            '9bf450e9b9cbe83cccd7f44ce08e8dc36a064f40b84f4d3f397958ef1c7dbc20'
+            '9ae108d36b653608bf032499bf359b17e3147d15419b87f718e64e42485a08fa')
+
+prepare() {
+    patch plik-server-${pkgver}-linux-amd64/server/plikd.cfg plikd_config.patch
+}
+
+package() {
+    install -Dm 755 "${srcdir}"/plik-server-${pkgver}-linux-amd64/server/plikd "${pkgdir}"/usr/bin/plikd
+    install -Dm 644 "${srcdir}"/plik-server-${pkgver}-linux-amd64/server/plikd.cfg "${pkgdir}"/etc/plikd.cfg
+    install -dm 644 "${srcdir}"/plik-server-${pkgver}-linux-amd64/webapp "${pkgdir}"/var/lib/plik/webapp
+    mv -T "${srcdir}"/plik-server-${pkgver}-linux-amd64/webapp "${pkgdir}"/var/lib/plik/webapp
+    install -dm 644 "${srcdir}"/plik-server-${pkgver}-linux-amd64/changelog "${pkgdir}"/var/lib/plik/changelog
+    mv -T "${srcdir}"/plik-server-${pkgver}-linux-amd64/changelog "${pkgdir}"/var/lib/plik/changelog
+    install -dm 600 "${pkgdir}"/var/lib/plik/files
+
+    install -Dm 644 "${srcdir}"/plikd.service "${pkgdir}"/usr/lib/systemd/system/plikd.service
+    install -Dvm644 "${srcdir}/plik.tmpfiles" "$pkgdir/usr/lib/tmpfiles.d/plik.conf"
+    install -Dvm644 "${srcdir}/plik.sysusers" "$pkgdir/usr/lib/sysusers.d/plik.conf"
+}

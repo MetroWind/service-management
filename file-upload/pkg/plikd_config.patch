@@ -1,0 +1,31 @@
+--- plikd.cfg	2026-03-31 08:52:23.000000000 -0700
++++ plikd.cfg.new	2026-08-18 14:01:23.479164961 -0700
+@@ -26,9 +26,9 @@
+ StreamTimeoutStr    = "5m"           # Max wait for a streaming download to start before releasing the upload goroutine (0 = no timeout)
+ # Note: settings.json "footer" takes precedence when set (supports custom HTML).
+ AbuseContact        = ""               # Abuse contact to be displayed in the footer of the webapp ( email address )
+-WebappDirectory     = "../webapp/dist" # Root directory for webapp static content
+-ClientsDirectory    = "../clients"     # Root directory for client binaries
+-ChangelogDirectory  = "../changelog"   # Root directory for changelog (to be displayed when updating clients)
++WebappDirectory     = "/var/lib/plik/webapp/dist" # Root directory for webapp static content
++ClientsDirectory    = "/var/lib/plik/clients"     # Root directory for client binaries
++ChangelogDirectory  = "/var/lib/plik/changelog"   # Root directory for changelog (to be displayed when updating clients)
+ SourceIpHeader      = ""               # If behind reverse proxy ( ex : X-FORWARDED-FOR )
+ UploadWhitelist     = []               # Restrict upload and user creation to one or more IP range ( CIDR notation, /32 can be omitted )
+ 
+@@ -143,7 +143,7 @@
+ 
+ DataBackend = "file"
+ [DataBackendConfig]
+-    Directory = "files"
++    Directory = "/var/lib/plik/files"
+ 
+ #   Metadata backend configuration
+ #
+@@ -152,5 +152,5 @@
+ #
+ [MetadataBackendConfig]
+     Driver = "sqlite3"
+-    ConnectionString = "plik.db"
++    ConnectionString = "/var/lib/plik/plik.db"
+     Debug = false # Log SQL requests

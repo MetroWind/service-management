@@ -1,0 +1,14 @@
+[Unit]
+Description=Plikd temporary file sharing server
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+User=plik
+Group=plik
+Type=exec
+ExecStart=/usr/bin/plikd
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
