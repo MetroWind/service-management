@@ -1,0 +1,54 @@
+- name: Build Tavern Cards showcase
+  hosts: localhost
+  gather_facts: yes
+  tasks:
+    - name: Clone small-tools-cpp
+      ansible.builtin.git:
+        repo: https://github.com/MetroWind/small-tools-cpp.git
+        dest: /tmp/small-tools-cpp
+
+    - name: Configure card showcase build
+      ansible.builtin.command:
+        cmd: cmake -S . -B build
+        chdir: /tmp/small-tools-cpp/tavern-cards
+
+    - name: Build card showcase
+      ansible.builtin.command:
+        cmd: cmake --build build -j24
+        chdir: /tmp/small-tools-cpp/tavern-cards
+
+    - name: Generate card showcase website
+      ansible.builtin.command:
+        argv:
+          - build/card_show
+          - "{{ ansible_env.HOME }}/pictures/tavern-cards"
+          - config.toml
+        chdir: /tmp/small-tools-cpp/tavern-cards
+
+- name: Publish Tavern Cards showcase
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Create card showcase directory
+      ansible.builtin.file:
+        path: /srv/http/root/tavern-cards
+        state: directory
+        mode: '0755'
+
+    - name: Copy card showcase website
+      ansible.builtin.copy:
+        src: /tmp/cards/
+        dest: /srv/http/root/tavern-cards/
+        mode: preserve
+
+- name: Clean up Tavern Cards showcase build
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Remove temporary build directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/small-tools-cpp
+        - /tmp/cards
