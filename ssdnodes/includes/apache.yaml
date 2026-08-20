@@ -1,5 +1,5 @@
 - name: Configure Apache
-  hosts: mws.rocks
+  hosts: ssh.mws.rocks
   become: yes
   tasks:
     - name: Install packages
@@ -41,6 +41,7 @@
       ansible.builtin.replace:
         regexp: '^<Directory "/srv/http">$.*^</Directory>$'
         replace: ""
+        path: /etc/httpd/conf/httpd.conf
 
     - name: Log format
       ansible.builtin.lineinfile:
@@ -70,6 +71,18 @@
         regexp: '^#Include\s+conf/vhosts/root\.conf'
         insertafter: "Probably not exists"
         line: 'Include conf/vhosts/root.conf'
+
+    - name: Copy default rewrite rules
+      ansible.builtin.copy:
+        src: http-rewrites.conf
+        dest: /etc/httpd/conf/extra/rewrites.conf
+
+    - name: Enable root vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/rewrites\.conf'
+        insertbefore: '^Include conf/vhosts/root\.conf'
+        line: 'Include conf/extra/rewrites.conf'
 
     - name: Restart Apache
       ansible.builtin.systemd:
