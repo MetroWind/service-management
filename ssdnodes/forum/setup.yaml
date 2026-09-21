@@ -107,10 +107,23 @@
         owner: http
         group: http
 
+    - name: Create the public bot-gate password file
+      ansible.builtin.copy:
+        # Public credentials: nobot / nobot, also shown in the login prompt.
+        # A fixed Apache MD5 hash keeps deployment idempotent without passlib.
+        content: |
+          nobot:$apr1$nrIS2Chr$r/evy6/2J6yqa0G7Gcgqj1
+        dest: /etc/httpd/forum.htpasswd
+        owner: root
+        group: http
+        mode: '0640'
+      tags: forum_auth
+
     - name: Copy Apache config
       ansible.builtin.copy:
         src: apache.conf
         dest: /etc/httpd/conf/vhosts/forum.conf
+      tags: forum_auth
 
     - name: Disable Apache MPM event
       ansible.builtin.replace:
@@ -147,8 +160,14 @@
         insertafter: "Probably not exists"
         line: 'Include conf/vhosts/forum.conf'
 
+    - name: Validate Apache configuration
+      ansible.builtin.command: apachectl configtest
+      changed_when: false
+      tags: forum_auth
+
     - name: Restart Apache
       ansible.builtin.systemd:
         state: restarted
         name: httpd
         enabled: yes
+      tags: forum_auth
