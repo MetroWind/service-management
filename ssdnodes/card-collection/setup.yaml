@@ -1,0 +1,73 @@
+- name: Build Card collection
+  hosts: ssh.mws.rocks
+  tasks:
+    - name: Download source
+      ansible.builtin.git:
+        repo: "https://git.xeno.darksair.org/card-collection.git"
+        dest: /tmp/card-collection
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "/tmp/card-collection/packages/arch"
+        creates: "/tmp/card-collection/packages/arch/card-collection-git-*-x86_64.pkg.tar.zst"
+
+    - name: What package did I build?
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 card-collection-git-*-x86_64.pkg.tar.zst | fgrep -v debug"
+        chdir: "/tmp/card-collection/packages/arch"
+
+    - set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - debug:
+        msg: "Built package {{ package_file }}"
+
+- name: Deploy Card-Collection
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name:
+          - "/tmp/card-collection/packages/arch/{{ package_file }}"
+        state: present
+
+    - name: Copy config
+      ansible.builtin.template:
+        src: config.toml
+        dest: /etc/card-collection.toml
+        group: card
+        owner: card
+        mode: 0644
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/card-collection.conf
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/card-collection\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/card-collection.conf'
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: card-collection
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Remove package dir
+      ansible.builtin.file:
+        path: /tmp/card-collection
+        state: absent

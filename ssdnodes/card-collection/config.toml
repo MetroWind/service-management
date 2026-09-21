@@ -1,0 +1,27 @@
+base_url = "https://cards.mws.rocks/"
+listen_address = "unix:/var/run/card-collection/network.sock"
+listen_port = 8080
+listen_socket_permission = 0o666
+static_root = "/var/lib/card-collection/static"
+database_path = "/var/lib/card-collection/data.db"
+card_storage_root = "/var/lib/card-collection/cards"
+avif_quality = 80
+thumbnail_long_side = 256
+
+# Immutable after the first database initialization.
+administrator_email = "chris.corsair@gmail.com"
+
+# Lowering this value can permanently discard accrued availability.
+maximum_accumulated_pulls = 3
+
+[email]
+transport = "file"
+link_file = "/var/run/card-collection/authentication-link.txt"
+
+# Production Mailjet alternative (replace the file settings above):
+# transport = "mailjet"
+# from_address = "cards@example.com"
+# from_name = "Card Collection"
+# mailjet_api_key_environment = "CARD_COLLECTION_MAILJET_API_KEY"
+# mailjet_secret_key_environment = "CARD_COLLECTION_MAILJET_SECRET_KEY"
+# daily_attempt_limit = 180
