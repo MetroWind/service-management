@@ -15,7 +15,7 @@ connectIPVersion: dual
 blocking:
   denylists:
     ads:
-      - https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/gambling-porn/hosts
+      - https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts
     custom:
       - |
         ocsp.apple.com
