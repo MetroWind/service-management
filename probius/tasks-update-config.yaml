@@ -1,0 +1,8 @@
+- name: Copy Probius configuration
+  ansible.builtin.copy:
+    src: probius.yaml
+    dest: /etc/probius.yaml
+    owner: root
+    group: probius
+    mode: "0640"
+  notify: Restart Probius

@@ -1,0 +1,131 @@
+---
+- name: Build Probius package
+  hosts: amalthus.xeno
+  gather_facts: false
+  vars:
+    package: probius-git
+    package_source_dir: /home/user/pkgs/probius
+    package_build_dir: "{{ package_source_dir }}/packages/arch"
+  tasks:
+    - name: Clone the Probius repository
+      ansible.builtin.git:
+        repo: https://git.xeno.darksair.org/probius.git
+        dest: "{{ package_source_dir }}"
+        version: HEAD
+        depth: 1
+        single_branch: true
+        force: true
+
+    - name: Remove previous package artifacts
+      ansible.builtin.command:
+        cmd: "find . -maxdepth 1 -type f -name '{{ package }}-*.pkg.tar.zst' -delete"
+        chdir: "{{ package_build_dir }}"
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "{{ package_build_dir }}"
+
+    - name: Find the built package
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1t {{ package }}-*.pkg.tar.zst | head -n1"
+        chdir: "{{ package_build_dir }}"
+      changed_when: false
+
+    - name: Verify that a package was built
+      ansible.builtin.assert:
+        that:
+          - package_file_proc.stdout | trim | length > 0
+        fail_msg: No Probius package was produced
+
+    - name: Save the package filename
+      ansible.builtin.set_fact:
+        package_file: "{{ package_file_proc.stdout | trim }}"
+
+    - name: Fetch package to the Ansible controller
+      ansible.builtin.fetch:
+        src: "{{ package_build_dir }}/{{ package_file }}"
+        dest: /tmp/
+        flat: true
+
+    - name: Remove package build files
+      ansible.builtin.file:
+        path: "{{ package_source_dir }}"
+        state: absent
+
+- name: Deploy Probius
+  hosts: brighid.xeno
+  become: true
+  vars:
+    package: probius-git
+    package_file: "{{ hostvars['amalthus.xeno']['package_file'] }}"
+  tasks:
+    - name: Copy package to the target
+      ansible.builtin.copy:
+        src: "/tmp/{{ package_file }}"
+        dest: "/tmp/{{ package_file }}"
+        mode: "0644"
+
+    - name: Install Probius package
+      ansible.builtin.command:
+        cmd: "pacman -U --noconfirm /tmp/{{ package_file }}"
+      notify: Restart Probius
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: "/tmp/{{ package_file }}"
+        state: absent
+
+    - name: Update Probius configuration
+      ansible.builtin.include_tasks:
+        file: tasks-update-config.yaml
+
+    - name: Ensure Probius is enabled and running
+      ansible.builtin.systemd:
+        name: probius
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Copy Apache virtual host configuration
+      ansible.builtin.copy:
+        src: httpd.conf
+        dest: /etc/httpd/conf/extra/probius.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Apache
+
+    - name: Enable Probius virtual host
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/extra/probius\.conf'
+        insertafter: EOF
+        line: Include conf/extra/probius.conf
+      notify: Restart Apache
+
+    - name: Validate Apache configuration
+      ansible.builtin.command:
+        cmd: apachectl configtest
+      changed_when: false
+
+    - name: Ensure Apache is enabled and running
+      ansible.builtin.systemd:
+        name: httpd
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Restart Probius
+      ansible.builtin.systemd:
+        name: probius
+        state: restarted
+        enabled: true
+        daemon_reload: true
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        name: httpd
+        state: restarted
+        enabled: true

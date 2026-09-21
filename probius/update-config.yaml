@@ -1,0 +1,16 @@
+---
+- name: Update Probius configuration
+  hosts: brighid.xeno
+  become: true
+  tasks:
+    - name: Update configuration
+      ansible.builtin.include_tasks:
+        file: tasks-update-config.yaml
+
+  handlers:
+    - name: Restart Probius
+      ansible.builtin.systemd:
+        name: probius
+        state: restarted
+        enabled: true
+        daemon_reload: true

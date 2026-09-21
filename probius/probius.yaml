@@ -1,0 +1,289 @@
+worker_count: 8
+database_path: /var/lib/probius/probius.sqlite
+unix_socket: /run/probius/probius.sock
+socket_permission: 0o666
+
+groups:
+  - name: Services
+    interval:
+      value: 1
+      unit: minute
+    timeout_second: 10
+    services:
+      homepage:
+        name: Homepage
+        description:
+        url: https://mws.rocks/
+        endpoint:
+          protocol: HTTP
+
+      auth:
+        name: OIDC Server
+        description: Keycloak
+        endpoint:
+          protocol: HTTP
+          url: https://auth.xeno.darksair.org/realms/xeno
+
+      blog:
+        name: Blog
+        description: My blog
+        url: https://blog.mws.rocks/
+        endpoint:
+          protocol: HTTP
+
+      dmw2:
+        name: DWM2 database
+        description: "On Linode"
+        url: https://darksair.org/dwm2-breed/
+        endpoint:
+          protocol: HTTP
+
+      game_trackers:
+        name: Game Trackers
+        description: "GitHub pages"
+        url: https://metrowind.github.io/game-trackers/
+        endpoint:
+          protocol: HTTP
+
+      transmission:
+        name: Transmission Web UI
+        url: http://adenine.xeno:9005/transmission/web/
+        endpoint:
+          protocol: HTTP
+
+      diary:
+        name: Diary
+        url: https://diary.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      docs:
+        name: Docs
+        url: https://docs.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      files-upload:
+        name: File Upload
+        url: https://files.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      git:
+        name: Git Host
+        url: https://git.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      matrix:
+        name: Matrix
+        endpoint:
+          protocol: HTTP
+          url: http://obrona.xeno:6167/
+
+      reader:
+        name: RSS Reader
+        description: Miniflux server
+        url: https://reader.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      music:
+        name: Music streaming
+        description: Gonic streaming server
+        endpoint:
+          url: https://music.xeno.darksair.org/
+          protocol: HTTP
+
+      gallery:
+        name: Photo gallery
+        url: https://gallery.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      pleroma:
+        name: Pleroma server
+        url: https://pleroma.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      notes:
+        name: Notes
+        description: Trilium server
+        url: https://notes.xeno.darksair.org/
+        endpoint:
+          protocol: HTTP
+
+      you-dump:
+        name: YouDump server
+        endpoint:
+          url: https://you-dump.xeno.darksair.org/
+          protocol: HTTP
+
+      xmpp:
+        name: XMPP server
+        description: This only probes :5222
+        endpoint:
+          protocol: TCP
+          host: xeno.darksair.org
+          port: 5222
+
+      cards:
+        name: Card collection online
+        url: https://cards.mws.rocks/
+        endpoint:
+          protocol: HTTP
+
+      forum:
+        name: Forum
+        description: phpBB
+        url: https://forum.mws.rocks/
+        endpoint:
+          protocol: HTTP
+          expected_code: 401
+
+      hister:
+        name: Hister server
+        description: Personal search engine
+        url: https://hister.mws.rocks/
+        endpoint:
+          protocol: HTTP
+
+      naivelysimple:
+        name: Naively Simple
+        description: My org
+        url: https://naivelysimple.org/
+        endpoint:
+          protocol: HTTP
+
+      photos:
+        name: Photo Stream
+        url: https://photos.mws.rocks/
+        endpoint:
+          protocol: HTTP
+
+      weekly:
+        name: Weekly Snippets
+        url: https://weekly.mws.rocks/
+        endpoint:
+          protocol: HTTP
+
+      shrt:
+        name: Shrt
+        description: URL shortening service
+        endpoint:
+          url: https://go.mws.rocks/
+          protocol: HTTP
+
+      tube:
+        name: MeTube
+        description: My video hosting
+        url: https://tube.mws.rocks/
+        endpoint:
+          protocol: HTTP
+
+      llm_api:
+        name: LLM API
+        endpoint:
+          url: https://llm.xeno.darksair.org/v1/models
+          protocol: HTTP
+
+      llm_web:
+        name: LLM Web UI
+        endpoint:
+          url: https://llm.xeno.darksair.org/
+          protocol: HTTP
+
+      tavern:
+        name: SillyTavern
+        endpoint:
+          url: https://tavern.xeno.darksair.org/
+          protocol: HTTP
+
+      dns:
+        name: DNS
+        description: Blocky
+        endpoint:
+          protocol: TCP
+          host: 10.10.10.21
+          port: 53
+
+  - name: Machines
+    interval:
+      value: 1
+      unit: minute
+    timeout_second: 5
+    services:
+      linode:
+        name: Linode VPS
+        endpoint:
+          protocol: ICMP
+          host: darksair.org
+
+      ssdnodes:
+        name: SSDNodes VPS
+        endpoint:
+          protocol: ICMP
+          host: ssh.mws.rocks
+
+      router:
+        name: Rex
+        description: Router
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.1
+
+      nity:
+        name: Nity
+        description: Storage
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.2
+
+      xeno:
+        name: Xeno
+        description: VM host
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.20
+
+      kosmos:
+        name: Kosmos
+        description: AI server
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.3
+
+  - name: Virtual Mahcines
+    interval:
+      value: 1
+      unit: minute
+    timeout_second: 5
+    services:
+      torna:
+        name: Torna
+        description: Infrastructure services
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.21
+
+      brighid:
+        name: Brighid
+        description: Web host
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.24
+
+      adenine:
+        name: Adenine
+        description: File services
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.22
+
+      obrona:
+        name: Obrona
+        description: Chat services
+        endpoint:
+          protocol: ICMP
+          host: 10.10.10.29
