@@ -1,0 +1,14 @@
+app:
+  directory: /var/lib/hister
+  public: false
+  user_handling: true
+server:
+  address: 127.0.0.1:4433
+  base_url: {{ ('https://' ~ hister_domain) | to_json }}
+  database: /var/lib/hister/db.sqlite3
+  oauth_only: true
+  oauth:
+    oidc:
+      client_id: 'hister'
+      client_secret: '{{ client_secret }}'
+      configuration_url: 'https://auth.xeno.darksair.org/realms/xeno/.well-known/openid-configuration'

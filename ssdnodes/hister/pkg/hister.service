@@ -1,0 +1,21 @@
+[Unit]
+Description=Hister personal search engine
+After=network.target
+
+[Service]
+User=hister
+Group=hister
+StateDirectory=hister
+StateDirectoryMode=0750
+WorkingDirectory=/var/lib/hister
+ExecStart=/usr/bin/hister listen --config /etc/hister.yaml
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

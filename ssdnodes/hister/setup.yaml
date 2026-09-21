@@ -1,0 +1,145 @@
+- name: Build Hister package
+  hosts: ssh.mws.rocks
+  tasks:
+    - name: Create temporary build directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: hister_build_
+      register: hister_build
+
+    - name: Build and fetch the package
+      block:
+        - name: Copy package sources
+          ansible.builtin.copy:
+            src: pkg/
+            dest: "{{ hister_build.path }}/"
+            mode: '0644'
+
+        - name: Package the upstream binary as an unprivileged user
+          ansible.builtin.command:
+            cmd: makepkg --nodeps --noconfirm
+            chdir: "{{ hister_build.path }}"
+          environment:
+            PKGDEST: "{{ hister_build.path }}"
+
+        - name: Find the built package
+          ansible.builtin.find:
+            paths: "{{ hister_build.path }}"
+            patterns: 'hister-bin-*.pkg.tar.*'
+            excludes: '*.sig'
+          register: hister_packages
+
+        - name: Require exactly one package
+          ansible.builtin.assert:
+            that: hister_packages.matched == 1
+
+        - name: Record package filename
+          ansible.builtin.set_fact:
+            hister_package_file: >-
+              {{ hister_packages.files[0].path }}
+
+    - debug:
+        msg: "Built package {{ hister_package_file }}"
+
+- name: Deploy Hister
+  hosts: ssh.mws.rocks
+  become: true
+  vars:
+    hister_domain: hister.mws.rocks
+    client_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          39643036336665326335343065623661633238393762323339376365653266303935626462333033
+          3430613432343336616632666163306634353261346465660a646337653230356263316235643730
+          38636165383564663565316266346531356561646133353561333131313736373232663434393866
+          3961643033376464390a336438663736663734353036663339373266396331343634396335303938
+          32656137623632376438343337633663333537636566623932353238663933313836373633343134
+          6235646332363633646634623937623064623766343333393765
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name: "{{ hister_package_file }}"
+        state: present
+      notify: Restart Hister
+
+    - name: Remove build directory
+      ansible.builtin.file:
+        path: "{{ hister_build.path }}"
+        state: absent
+
+    - name: Remove package archive
+      ansible.builtin.file:
+        path: "{{ hister_package_file }}"
+        state: absent
+
+    - name: Configure Hister
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/hister.yaml
+        owner: root
+        group: hister
+        mode: '0640'
+      no_log: true
+      notify: Restart Hister
+
+    - name: Enable Hister
+      ansible.builtin.systemd_service:
+        name: hister
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Enable Apache modules
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#?\s*LoadModule {{ item }}_module\s+'
+        line: 'LoadModule {{ item }}_module modules/mod_{{ item }}.so'
+      loop:
+        - proxy
+        - proxy_http
+        - headers
+        - rewrite
+      notify: Reload Apache
+
+    - name: Install Apache proxy configuration
+      ansible.builtin.template:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/hister.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload Apache
+
+    - name: Enable Hister vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#?\s*Include\s+conf/vhosts/hister\.conf\s*$'
+        line: Include conf/vhosts/hister.conf
+      notify: Reload Apache
+
+    - name: Apply service changes
+      ansible.builtin.meta: flush_handlers
+
+    - name: Check Hister listener
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 4433
+        timeout: 30
+
+  handlers:
+    - name: Restart Hister
+      ansible.builtin.systemd_service:
+        name: hister
+        state: restarted
+        daemon_reload: true
+
+    - name: Validate Apache configuration
+      ansible.builtin.command: httpd -t
+      changed_when: false
+      listen: Reload Apache
+
+    - name: Reload Apache service
+      ansible.builtin.systemd_service:
+        name: httpd
+        state: reloaded
+        enabled: true
+      listen: Reload Apache

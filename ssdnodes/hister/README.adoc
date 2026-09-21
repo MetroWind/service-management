@@ -1,0 +1,38 @@
+= Hister
+
+Packages the upstream v0.19.0 Linux amd64 binary (the latest stable release
+when added) with a pinned SHA-256 checksum. Build on `amalthus.xeno` as
+its normal unprivileged inventory user, then install on `ssh.mws.rocks`.
+The builder needs `base-devel`; the target uses the existing Apache and
+shared TLS setup from `ssdnodes/includes`.
+
+Create an encrypted Ansible vars file containing `hister_access_token`
+(a long random secret), then run from the repository root:
+
+[source,sh]
+----
+ansible-playbook -i hosts.ini ssdnodes/hister/setup.yaml \
+    -e @/path/to/hister_secrets.yaml --ask-vault-pass --ask-become-pass
+----
+
+The default URL is `https://hister.mws.rocks`. Override `hister_domain`
+with `-e` if needed. Point its DNS at the server and ensure the existing
+Apache certificate covers it before running the playbook. Enter the
+access token in the web UI and browser extension.
+
+The Arch package contains the binary, systemd unit, and sysusers rule.
+Pacman's sysusers hook creates the `hister` user and group. Systemd creates
+`/var/lib/hister` for persistent data. Ansible manages `/etc/hister.yaml`
+and the Apache vhost separately; neither is included in the package.
+Hister listens on loopback port 4433, with HTTPS and WebSocket proxying
+handled by Apache. HTTP redirects to HTTPS except for ACME challenges.
+
+To upgrade, update `pkgver` and the binary checksum in `pkg/PKGBUILD`,
+reset `pkgrel` to 1, and rerun the playbook. Increment `pkgrel` when
+changing packaged service files and update their checksums as well.
+The playbook builds a fresh package each run; pacman skips an already
+installed package version. The fetched archive remains in `/tmp` on
+the controller.
+
+Upstream: https://hister.org/docs/installing[installation] and
+https://hister.org/docs/server-setup[server setup].

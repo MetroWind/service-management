@@ -1,0 +1,28 @@
+pkgname=hister-bin
+pkgver=0.19.0
+pkgrel=1
+pkgdesc='A personal search engine for browsing history and documents'
+arch=('x86_64')
+url='https://github.com/asciimoo/hister'
+license=('AGPL-3.0-or-later')
+depends=('ca-certificates' 'systemd')
+provides=('hister')
+conflicts=('hister')
+options=('!strip' '!debug')
+source=("${url}/releases/download/v${pkgver}/hister_${pkgver}_linux_amd64"
+        'hister.service'
+        'hister.sysusers')
+sha256sums=('7571f7b94039917d519372fa6aff18fe12c2ef50f981ac847ec1aff4d7e41701'
+            'ae176390488ff3112d613516c128b3096cacf7d56f91f712580ba3fc20761c95'
+            'c1acbeb4f9f0d06e962cee9b0d7366a07abe6d256b657a7ddc5c04d9f62115d9')
+
+# Install the upstream binary and service integration into the package root.
+package()
+{
+    install -Dm755 "${srcdir}/hister_${pkgver}_linux_amd64" \
+        "${pkgdir}/usr/bin/hister"
+    install -Dm644 "${srcdir}/hister.service" \
+        "${pkgdir}/usr/lib/systemd/system/hister.service"
+    install -Dm644 "${srcdir}/hister.sysusers" \
+        "${pkgdir}/usr/lib/sysusers.d/hister.conf"
+}
