@@ -1,0 +1,23 @@
+---
+- name: Install local SSH keys on all hosts
+  hosts: all
+  become: true
+  ignore_unreachable: true
+
+  vars:
+    controller_ssh_directory: "{{ lookup('ansible.builtin.env', 'HOME') }}/.ssh"
+    ssh_public_keys:
+      - >-
+        {{ lookup('ansible.builtin.file', controller_ssh_directory
+        ~ '/id_ed25519.pub') | trim }}
+      - >-
+        {{ lookup('ansible.builtin.file', controller_ssh_directory
+        ~ '/id_ed25519_sk_rk.pub') | trim }}
+
+  tasks:
+    - name: Replace authorized keys for the Ansible login user
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        key: "{{ ssh_public_keys | join('\n') }}"
+        exclusive: true
+        state: present
