@@ -1,0 +1,25 @@
+[server]
+listen_address = "/run/nethack-mcp/network.sock"
+listen_socket_permission = 0o666
+public_base_url = "https://nethack.mws.rocks/"
+
+[paths]
+data_root = "/run/nethack-mcp/games"
+database = "/var/lib/nethack-mcp/games.sqlite3"
+runtime_dir = "/usr/share/nethack-mcp/runtime"
+
+[limits]
+max_active_games = 100
+# Apache requests share one proxy address for this per-client limit.
+new_games_per_client = 8
+new_game_rate_window_seconds = 3600
+control_failures_per_client = 10
+control_failure_window_seconds = 60
+max_rate_limit_clients = 4096
+max_concurrent_requests = 64
+max_open_connections = 512
+idle_timeout_seconds = 600
+max_game_duration_seconds = 86400
+lifecycle_sweep_seconds = 15
+max_mcp_body_bytes = 1048576
+max_worker_output_bytes = 1048576

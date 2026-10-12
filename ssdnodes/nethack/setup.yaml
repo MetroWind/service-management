@@ -1,0 +1,98 @@
+- name: Build NetHack MCP
+  hosts: ssh.mws.rocks
+  tasks:
+    - name: Download source
+      ansible.builtin.git:
+        repo: "https://git.xeno.darksair.org/nethack-mcp.git"
+        dest: /tmp/nethack-mcp
+
+    - name: Build package
+      ansible.builtin.command:
+        cmd: makepkg -sr --noconfirm -f
+        chdir: "/tmp/nethack-mcp/packages/arch"
+        creates: "/tmp/nethack-mcp/packages/arch/nethack-mcp-*-x86_64.pkg.tar.zst"
+      environment:
+        MAKEFLAGS: "-j24"
+
+    - name: Find built package
+      register: package_file_proc
+      ansible.builtin.shell:
+        cmd: "ls -1 nethack-mcp-*-x86_64.pkg.tar.zst | fgrep -v debug"
+        chdir: "/tmp/nethack-mcp/packages/arch"
+
+    - name: Set package file
+      ansible.builtin.set_fact:
+        package_file: "{{ package_file_proc.stdout }}"
+
+    - name: Show built package
+      ansible.builtin.debug:
+        msg: "Built package {{ package_file }}"
+
+- name: Deploy NetHack MCP
+  hosts: ssh.mws.rocks
+  become: yes
+  tasks:
+    - name: Install package
+      community.general.pacman:
+        name:
+          - "/tmp/nethack-mcp/packages/arch/{{ package_file }}"
+        state: present
+
+    - name: Remove source code
+      ansible.builtin.file:
+        path: /tmp/nethack-mcp
+        state: absent
+
+    - name: Copy config
+      ansible.builtin.copy:
+        src: config.toml
+        dest: /etc/nethack-mcp.toml
+        owner: root
+        group: nethack-mcp
+        mode: '0640'
+
+    - name: Copy Apache config
+      ansible.builtin.copy:
+        src: apache.conf
+        dest: /etc/httpd/conf/vhosts/nethack.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Enable vhost
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^#Include\s+conf/vhosts/nethack\.conf'
+        insertafter: "Probably not exists"
+        line: 'Include conf/vhosts/nethack.conf'
+
+    - name: Create service override directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/nethack-mcp.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Allow Apache to traverse the socket directory
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/nethack-mcp.service.d/runtime-directory.conf
+        content: |
+          [Service]
+          RuntimeDirectoryMode=0755
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Make sure service is running and enabled
+      ansible.builtin.systemd:
+        state: restarted
+        name: nethack-mcp
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        state: restarted
+        name: httpd
+        enabled: yes
