@@ -8,3 +8,12 @@ url-prefix: https://weekly.mws.rocks
 guest-index: "user-weekly"
 guest-index-user: mw
 default-lang: zh-CN
+game-screenshots:
+  thumbnail:
+    codec: avif
+    quality: 75
+    long-edge: 320
+  preview:
+    codec: avif
+    quality: 80
+    long-edge: 1920
